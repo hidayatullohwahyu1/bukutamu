@@ -33,7 +33,7 @@
       <button id="btn-pasang" class="btn-top btn-pasang" hidden aria-label="Pasang aplikasi di HP">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>Pasang</span>
       </button>
-      <button id="btn-masuk" class="btn-top">Admin</button>
+      <button id="btn-masuk" class="btn-top"><svg viewBox="0 0 24 24" aria-hidden="true" class="ikon-masuk"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="ikon-keluar"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg><span id="btn-masuk-teks">Admin</span></button>
     </div>
   </header>
 
@@ -222,7 +222,7 @@
               <option value="11:1">Keperluan</option>
             </select>
           </label>
-          <label class="perhal">Tampilkan
+          <label class="perhal"><span class="sembunyi-hp">Tampilkan</span>
             <select id="d-perhal" aria-label="Jumlah baris per halaman">
               <option value="10">10</option><option value="25">25</option><option value="50">50</option>
             </select>
@@ -250,12 +250,13 @@
             <tbody></tbody>
           </table>
         </div>
+        <div id="d-kartu" class="kartu-list" aria-label="Daftar tamu"></div>
         <div class="pager" id="d-pager-wrap">
           <span id="d-info" class="muted"></span>
           <div class="pager-tombol" id="d-pager">
-            <button id="d-prev" class="btn btn-ghost btn-sm" aria-label="Halaman sebelumnya">‹ Sebelumnya</button>
+            <button id="d-prev" class="btn btn-ghost btn-sm" aria-label="Halaman sebelumnya">‹<span class="teks-pager"> Sebelumnya</span></button>
             <span id="d-halaman" class="halaman"></span>
-            <button id="d-next" class="btn btn-ghost btn-sm" aria-label="Halaman berikutnya">Berikutnya ›</button>
+            <button id="d-next" class="btn btn-ghost btn-sm" aria-label="Halaman berikutnya"><span class="teks-pager">Berikutnya </span>›</button>
           </div>
         </div>
       </div>

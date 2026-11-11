@@ -175,7 +175,9 @@ function tampil(id) {
 function aturPeran() {
   $$('[data-peran]').forEach(el => { el.hidden = el.dataset.peran === 'admin' ? !admin() : !petugas(); });
   document.body.classList.toggle('petugas', petugas());
-  $('#btn-masuk').textContent = petugas() ? 'Keluar' : 'Admin';
+  $('#btn-masuk-teks').textContent = petugas() ? 'Keluar' : 'Admin';
+  $('#btn-masuk').classList.toggle('keluar', petugas());
+  $('#btn-masuk').setAttribute('aria-label', petugas() ? 'Keluar dari admin' : 'Masuk admin');
   aturTombolPasang();
 }
 
@@ -916,6 +918,36 @@ function renderDaftar() {
       <button class="ikon-btn bahaya" data-hapus="${esc(t.id)}" title="Hapus data" aria-label="Hapus data ${esc(t.nama)}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
     </td></tr>`;
   }).join('') : `<tr><td colspan="13" class="kosong">${q ? 'Tidak ada yang cocok.' : 'Belum ada tamu pada bulan ini.'}</td></tr>`;
+  $('#d-kartu').innerHTML = tampilan.length ? tampilan.map(kartuTamu).join('')
+    : `<p class="pos-kosong">${q ? 'Tidak ada yang cocok.' : 'Belum ada tamu pada bulan ini.'}</p>`;
+}
+
+// warna lingkaran inisial (tetap sama untuk nama yang sama)
+const WARNA_AVATAR = ['#1A6EE8', '#E8541A', '#31A24C', '#8B44D9', '#D92F7F', '#0E9AA7', '#B7791F', '#5B6B8C'];
+function avatar(nama) {
+  const kata = String(nama || '?').replace(/[^A-Za-z ]/g, '').trim().split(/\s+/);
+  const ini = ((kata[0] || '?')[0] + (kata.length > 1 ? kata[kata.length - 1][0] : '')).toUpperCase();
+  let h = 0; for (const c of String(nama)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return `<span class="avatar" style="background:${WARNA_AVATAR[h % WARNA_AVATAR.length]}" aria-hidden="true">${esc(ini)}</span>`;
+}
+function kartuTamu(t) {
+  const ket = t.keperluan && String(t.keterangan).toUpperCase().startsWith(t.keperluan)
+    ? String(t.keterangan).slice(t.keperluan.length).replace(/^\s*-\s*/, '') : (t.keperluan ? '' : t.keterangan);
+  const alamat = t.rw === '-' ? 'Luar desa' : `RT ${t.rt}/RW ${t.rw}`;
+  return `<article class="pos">
+    <header class="pos-kepala">${avatar(t.nama)}
+      <div><b class="pos-nama">${esc(t.nama)}</b>
+      <span class="pos-sub">${esc(dmyPanjang(t.tanggal))} · No. ${esc(t.no)} · ${esc(alamat)}</span></div>
+    </header>
+    <div class="pos-isi">
+      ${t.keperluan ? `<span class="pos-perlu">${esc(labelKeperluan(t.keperluan))}</span>` : ''}${ket ? `<p>${esc(ket)}</p>` : ''}
+      <p class="pos-detail">${t.lp === 'P' ? 'Perempuan' : 'Laki-laki'} · ${esc(judulKata(t.tempatLahir))}, ${esc(t.tanggalLahir)} · ${esc(judulKata(t.agama))} · ${esc(judulKata(t.status))} · ${esc(judulKata(t.pekerjaan))}</p>
+    </div>
+    <footer class="pos-aksi">
+      <button data-ubah="${esc(t.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M14 6l4 4"/></svg>Ubah</button>
+      <button data-hapus="${esc(t.id)}" class="bahaya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Hapus</button>
+    </footer>
+  </article>`;
 }
 
 // klik judul kolom = urutkan; klik lagi = balik arah
@@ -946,7 +978,7 @@ const pindahHal = d => { S.tabel.hal += d; renderDaftar(); $('#d-tabel').scrollI
 $('#d-prev').addEventListener('click', () => pindahHal(-1));
 $('#d-next').addEventListener('click', () => pindahHal(1));
 
-$('#d-tabel').addEventListener('click', async e => {
+const klikAksiTamu = async e => {
   const u = e.target.closest('[data-ubah]'), h = e.target.closest('[data-hapus]');
   const cari = id => S.daftar.find(t => t.id === id);
   if (u) {
@@ -963,7 +995,9 @@ $('#d-tabel').addEventListener('click', async e => {
     if (alasan === null) return;
     try { await api('hapus', { id: t.id, alasan }); toast('Data dihapus.'); muatLaporan(); } catch (err) { toast(err.message, true); }
   }
-});
+};
+$('#d-tabel').addEventListener('click', klikAksiTamu);
+$('#d-kartu').addEventListener('click', klikAksiTamu);
 
 /* ---------- Excel lengkap (ExcelJS) ---------- */
 

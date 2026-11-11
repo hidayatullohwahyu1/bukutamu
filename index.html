@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Buku Tamu Desa Merden</title>
-  <meta name="theme-color" content="#14703A">
+  <meta name="theme-color" content="#FFFFFF">
   <meta name="description" content="Buku tamu digital Kantor Desa Merden">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
@@ -68,7 +68,7 @@
           </div>
 
           <div class="cari-nama" data-peran="petugas">
-            <input id="cari-nama" type="search" placeholder="Admin: cari nama penduduk" autocomplete="off">
+            <input id="cari-nama" type="search" enterkeyhint="search" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Admin: cari nama penduduk" autocomplete="off">
             <button id="cari-nama-btn" class="btn btn-ghost">Cari</button>
           </div>
           <div id="nama-hasil" class="hasil"></div>
@@ -96,7 +96,7 @@
           <div class="chips chips-besar" id="p-keperluan"></div>
           <p class="msg err" id="p-salah" role="alert"></p>
           <label>Keterangan tambahan <span class="muted">(boleh dikosongkan)</span>
-            <textarea id="p-ket" rows="2" maxlength="250" placeholder="Contoh: untuk pendaftaran sekolah anak"></textarea>
+            <textarea id="p-ket" rows="2" maxlength="250" autocapitalize="sentences" enterkeyhint="done" placeholder="Contoh: untuk pendaftaran sekolah anak"></textarea>
           </label>
           <button class="btn btn-primary btn-xl" id="p-simpan">SIMPAN</button>
         </div>
@@ -119,22 +119,22 @@
           <legend>Langkah 1 dari 3 — Data diri</legend>
           <div class="grid">
             <label class="span2" data-f="nama">Nama lengkap
-              <input id="f-nama" type="text" maxlength="100" autocomplete="off" class="upper" enterkeyhint="next">
+              <input id="f-nama" type="text" maxlength="100" class="upper" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" placeholder="Sesuai KTP">
               <small></small>
             </label>
             <div class="field" data-f="lp">Jenis kelamin
               <div class="chips" id="c-lp"></div><small></small>
             </div>
             <label data-f="nik">NIK <span class="muted">(opsional)</span>
-              <input id="f-nik" type="text" inputmode="numeric" maxlength="16" autocomplete="off">
+              <input id="f-nik" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="16" autocomplete="off" enterkeyhint="next" placeholder="16 angka">
               <small></small>
             </label>
             <label data-f="tempatLahir">Tempat lahir
-              <input id="f-tempat" type="text" list="dl-tempat" maxlength="60" class="upper" autocomplete="off">
+              <input id="f-tempat" type="text" list="dl-tempat" maxlength="60" class="upper" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" placeholder="Contoh: BANJARNEGARA">
               <small></small>
             </label>
             <label data-f="tanggalLahir">Tanggal lahir
-              <input id="f-tgllahir" type="date">
+              <input id="f-tgllahir" type="text" inputmode="numeric" maxlength="10" autocomplete="off" enterkeyhint="next" placeholder="HH-BB-TTTT, contoh 05-04-1984">
               <small></small>
             </label>
             <div class="field span2" data-f="agama">Agama
@@ -144,7 +144,8 @@
               <div class="chips" id="c-status"></div><small></small>
             </div>
             <label class="span2" data-f="pekerjaan">Pekerjaan
-              <input id="f-pekerjaan" type="text" list="dl-pekerjaan" class="upper" autocomplete="off" placeholder="Ketik untuk mencari">
+              <div class="chips chips-kecil" id="c-pekerjaan-cepat"></div>
+              <input id="f-pekerjaan" type="text" list="dl-pekerjaan" class="upper" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Atau ketik pekerjaan lain">
               <small></small>
             </label>
           </div>
@@ -169,7 +170,7 @@
             <div class="chips" id="c-keperluan"></div><small></small>
           </div>
           <label data-f="keterangan">Keterangan
-            <textarea id="f-ket" rows="2" maxlength="250" placeholder="Tulis keperluan atau penjelasan singkat"></textarea>
+            <textarea id="f-ket" rows="2" maxlength="250" autocapitalize="sentences" enterkeyhint="done" placeholder="Tulis keperluan atau penjelasan singkat"></textarea>
             <small></small>
           </label>
         </fieldset>
@@ -212,7 +213,7 @@
         <p class="muted kecil">File Excel berisi kop desa, daftar tamu lengkap, tanda tangan Kepala Desa, dan sheet <b>Rekap</b> (jumlah per keperluan, dusun, umur, tanggal).</p>
       </div>
       <div class="cari-daftar">
-        <input type="search" id="d-q" placeholder="Cari nama atau keperluan di bulan ini…" aria-label="Cari tamu">
+        <input type="search" id="d-q" enterkeyhint="search" autocorrect="off" spellcheck="false" placeholder="Cari nama atau keperluan di bulan ini…" aria-label="Cari tamu">
       </div>
       <p id="d-ringkas" class="ringkas"></p>
       <div class="table-wrap">

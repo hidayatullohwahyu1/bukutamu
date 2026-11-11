@@ -297,6 +297,7 @@ function renderNik() {
 }
 
 function tekanNik(k) {
+  if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* abaikan */ } }
   if (k === 'hapus') S.nik = S.nik.slice(0, -1);
   else if (k === 'cari') { if (S.nik.length === 16) cariNik(); return; }
   else if (/^\d$/.test(k) && S.nik.length < 16) S.nik += k;
@@ -420,6 +421,58 @@ const gabungKet = (keperluan, ket) => keperluan ? (ket ? `${keperluan} - ${ket}`
 
 /* ================= ISI MANUAL / UBAH ================= */
 
+/* --- kenyamanan mengetik --- */
+// "05041984" -> "05-04-1984" otomatis saat diketik
+function formatTgl(v) {
+  const a = String(v).replace(/\D/g, '').slice(0, 8);
+  return a.length > 4 ? `${a.slice(0, 2)}-${a.slice(2, 4)}-${a.slice(4)}` : a.length > 2 ? `${a.slice(0, 2)}-${a.slice(2)}` : a;
+}
+function tglValid(v) {
+  const m = String(v || '').match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (!m) return '';
+  const d = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
+  if (d.getUTCDate() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || +m[3] < 1900) return '';
+  return v;
+}
+$('#f-tgllahir').addEventListener('input', e => {
+  const el = e.target, f = formatTgl(el.value);
+  if (el.value !== f) el.value = f;
+});
+$('#f-nik').addEventListener('input', e => { const v = e.target.value.replace(/\D/g, ''); if (v !== e.target.value) e.target.value = v; });
+
+// pekerjaan yang paling sering: cukup sekali sentuh
+const PEKERJAAN_CEPAT = ['MENGURUS RUMAH TANGGA', 'BELUM/TIDAK BEKERJA', 'PELAJAR/MAHASISWA', 'KARYAWAN SWASTA', 'BURUH HARIAN LEPAS', 'PETANI/PEKEBUN', 'WIRASWASTA', 'PEDAGANG'];
+buatChips('#c-pekerjaan-cepat', PEKERJAAN_CEPAT.map(p => [p, judulKata(p)]));
+$('#c-pekerjaan-cepat').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) { $('#f-pekerjaan').value = b.dataset.v; bersihSalah($('[data-f="pekerjaan"]')); setTimeout(sorotPekerjaan); }
+});
+const sorotPekerjaan = () => {
+  const v = $('#f-pekerjaan').value.trim().toUpperCase();
+  $$('#c-pekerjaan-cepat button').forEach(b => { const on = b.dataset.v === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+};
+$('#f-pekerjaan').addEventListener('input', sorotPekerjaan);
+
+// Enter di keyboard = pindah ke kolom berikutnya (bukan langsung mengirim formulir)
+$('#form-tamu').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const fs = e.target.closest('fieldset');
+  const kolom = $$('input:not([type=checkbox]), textarea', fs).filter(x => x.offsetParent && !x.disabled);
+  const berikut = kolom[kolom.indexOf(e.target) + 1];
+  if (berikut) berikut.focus(); else { e.target.blur(); $('#form-simpan').click(); }
+});
+
+// saat keyboard muncul: tombol yang menempel di bawah disembunyikan, kolom digulir ke tengah
+const sedangKetik = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes(el.type) && !el.readOnly));
+document.addEventListener('focusin', e => {
+  if (!sedangKetik(e.target)) return;
+  document.body.classList.add('mengetik');
+  if (window.innerWidth <= 960) setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+});
+document.addEventListener('focusout', () => setTimeout(() => { if (!sedangKetik(document.activeElement)) document.body.classList.remove('mengetik'); }, 120));
+
+
 function siapkanForm(d) {
   const f = $('#form-tamu');
   f.reset();
@@ -431,15 +484,17 @@ function siapkanForm(d) {
   $('#f-tanggal').value = isoHariIni();
   $('#form-judul').textContent = S.mode === 'ubah' ? `Ubah Data No. ${S.editData.no}` : (d ? 'Koreksi Data Tamu' : 'Isi Manual');
   tampilLangkah(1);
+  sorotPekerjaan();
   if (!d) return;
   $('#f-nama').value = d.nama || '';
   $('#f-nik').value = d.nik || '';
   pilihChip('#c-lp', d.lp || '');
   $('#f-tempat').value = d.tempatLahir || '';
-  $('#f-tgllahir').value = dmyKeIso(d.tanggalLahir);
+  $('#f-tgllahir').value = d.tanggalLahir || '';
   pilihChip('#c-agama', d.agama || '');
   pilihChip('#c-status', d.status || '');
   $('#f-pekerjaan').value = d.pekerjaan || '';
+  sorotPekerjaan();
   const luar = d.rw === '-' || d.rt === '-';
   $('#f-luar').checked = luar;
   $('#alamat-desa').hidden = luar;
@@ -462,7 +517,7 @@ function bacaForm() {
     nama: $('#f-nama').value.trim().toUpperCase(),
     lp: nilaiChip('#c-lp'),
     tempatLahir: $('#f-tempat').value.trim().toUpperCase(),
-    tanggalLahir: isoKeDmy($('#f-tgllahir').value),
+    tanggalLahir: tglValid($('#f-tgllahir').value),
     agama: nilaiChip('#c-agama'),
     status: nilaiChip('#c-status'),
     pekerjaan: $('#f-pekerjaan').value.trim().toUpperCase(),
@@ -486,7 +541,7 @@ function validasiForm(d, hanya) {
   if (d.nik && d.nik.length !== 16) salah.nik = 'NIK harus 16 angka, atau kosongkan';
   if (!d.lp) salah.lp = 'Pilih jenis kelamin';
   if (!d.tempatLahir) salah.tempatLahir = 'Tempat lahir wajib diisi';
-  if (!d.tanggalLahir) salah.tanggalLahir = 'Tanggal lahir wajib diisi';
+  if (!d.tanggalLahir) salah.tanggalLahir = $('#f-tgllahir').value.trim() ? 'Tanggal tidak benar. Tulis seperti 05-04-1984' : 'Tanggal lahir wajib diisi';
   else if (dmyKeIso(d.tanggalLahir) > isoHariIni()) salah.tanggalLahir = 'Tanggal lahir tidak boleh setelah hari ini';
   if (!d.agama) salah.agama = 'Pilih agama';
   if (!d.status) salah.status = 'Pilih status perkawinan';
@@ -823,7 +878,7 @@ async function buatExcel(rows, b) {
   const namaDesa = (desa.nama || 'Merden');
   const urut = rows.slice().sort((x, y) => urutKunci(x).localeCompare(urutKunci(y)));
   const rk = hitungRekap(urut, b);
-  const HIJAU = 'FF14703A', HIJAU_MUDA = 'FFE6F3EA', ABU = 'FFF4F6F5';
+  const HIJAU = 'FF1A6EE8', HIJAU_MUDA = 'FFE7F0FD', ABU = 'FFF4F6F5';
   const tipis = { style: 'thin', color: { argb: 'FF9AA5A0' } };
   const garis = { top: tipis, left: tipis, bottom: tipis, right: tipis };
 

@@ -31,30 +31,11 @@
       <span id="jam" class="jam"></span>
       <span id="net" class="dot" title="Online"></span>
       <span id="antrean-pill" class="pill" hidden></span>
-      <button id="btn-masuk" class="btn-top">Petugas</button>
+      <button id="btn-masuk" class="btn-top">Admin</button>
     </div>
   </header>
 
   <main>
-    <!-- PENGATURAN AWAL TABLET -->
-    <section id="v-setup" class="view" hidden>
-      <div class="card narrow">
-        <h1>Pengaturan Awal</h1>
-        <p class="muted">Diisi sekali oleh admin. URL dan kunci API ada di spreadsheet, menu <b>Buku Tamu &gt; Lihat kunci API</b>.</p>
-        <label>URL Web App
-          <input id="s-url" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
-        </label>
-        <label>Kunci API
-          <input id="s-kunci" type="text" autocomplete="off" spellcheck="false">
-        </label>
-        <label>Nama perangkat (opsional)
-          <input id="s-perangkat" type="text" placeholder="TABLET-PELAYANAN-1">
-        </label>
-        <p id="s-pesan" class="msg" role="status"></p>
-        <button id="s-simpan" class="btn btn-primary btn-lg">Tes Koneksi &amp; Simpan</button>
-      </div>
-    </section>
-
     <!-- LANGKAH 1: NIK -->
     <section id="v-nik" class="view" hidden>
       <div class="nik-layout">
@@ -85,7 +66,7 @@
           </div>
 
           <div class="cari-nama" data-peran="petugas">
-            <input id="cari-nama" type="search" placeholder="Petugas: cari nama penduduk" autocomplete="off">
+            <input id="cari-nama" type="search" placeholder="Admin: cari nama penduduk" autocomplete="off">
             <button id="cari-nama-btn" class="btn btn-ghost">Cari</button>
           </div>
           <div id="nama-hasil" class="hasil"></div>
@@ -99,7 +80,7 @@
     <section id="v-pilih" class="view" hidden>
       <div class="pilih-layout">
         <div class="card orang">
-          <p class="muted">Data Anda</p>
+          <p class="muted">Apakah ini Anda?</p>
           <h2 class="orang-nama" id="p-nama"></h2>
           <dl class="orang-info" id="p-info"></dl>
           <div class="baris-tombol">
@@ -206,6 +187,14 @@
 
     <!-- DAFTAR -->
     <section id="v-daftar" class="view" hidden>
+      <div class="card laporan">
+        <h2>Laporan bulanan</h2>
+        <p class="muted">Pilih bulan, lalu unduh buku tamu bulan itu dalam format Excel.</p>
+        <div class="filter-cari">
+          <input type="month" id="l-bulan" aria-label="Bulan laporan">
+          <button id="l-unduh" class="btn btn-primary btn-lg">Unduh Excel</button>
+        </div>
+      </div>
       <div class="kepala">
         <h1>Daftar Tamu</h1>
         <div class="baris-tombol">
@@ -321,11 +310,6 @@
           <button id="a-pin-simpan" class="btn btn-primary">Ganti PIN</button>
         </div>
 
-        <div class="card">
-          <h2>Koneksi Server</h2>
-          <p class="muted" id="a-koneksi"></p>
-          <button id="a-ubah-koneksi" class="btn btn-ghost">Ubah URL / Kunci API</button>
-        </div>
       </div>
     </section>
   </main>
@@ -343,7 +327,7 @@
 
   <!-- PIN -->
   <dialog id="dlg-pin">
-    <h2>Masuk Petugas</h2>
+    <h2>Masuk Admin</h2>
     <div class="pin-dots" id="pin-dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <p id="pin-pesan" class="msg" role="status"></p>
     <div class="keypad kecil" id="pin-pad">

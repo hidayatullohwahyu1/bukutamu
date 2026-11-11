@@ -21,7 +21,13 @@ const lokal = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* penuh/diblokir */ } },
   del(k) { try { localStorage.removeItem(k); } catch (e) { /* abaikan */ } }
 };
-const conf = () => lokal.get('bt_conf', {});
+// Alamat server (Google Apps Script Web App). Tidak perlu diatur di tablet.
+const API_URL = 'https://script.google.com/macros/s/AKfycbzmNbGItSpg2Yyphx7NeGiZslY6jBT6UkepMVsAhpnu-6Mi6BfMsqHqXG8LFxErlRQF/exec';
+const conf = () => {
+  let perangkat = lokal.get('bt_perangkat');
+  if (!perangkat) { perangkat = 'TABLET-' + Math.random().toString(36).slice(2, 7).toUpperCase(); lokal.set('bt_perangkat', perangkat); }
+  return { url: API_URL, perangkat };
+};
 
 const S = {
   token: null, peran: null,
@@ -80,7 +86,7 @@ async function api(action, data = {}, opsi = {}) {
       res = await fetch(c.url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(Object.assign({ action, kunci: c.kunci, token: S.token, perangkat: c.perangkat }, data)),
+        body: JSON.stringify(Object.assign({ action, token: S.token, perangkat: c.perangkat }, data)),
         signal: ctrl.signal,
         redirect: 'follow'
       });
@@ -171,7 +177,7 @@ function tampil(id) {
 function aturPeran() {
   $$('[data-peran]').forEach(el => { el.hidden = el.dataset.peran === 'admin' ? !admin() : !petugas(); });
   document.body.classList.toggle('petugas', petugas());
-  $('#btn-masuk').textContent = petugas() ? 'Keluar' : 'Petugas';
+  $('#btn-masuk').textContent = petugas() ? 'Keluar' : 'Admin';
 }
 
 document.addEventListener('click', e => {
@@ -374,12 +380,14 @@ $('#nama-hasil').addEventListener('click', e => {
 function tampilPilih() {
   const p = S.terisi;
   $('#p-nama').textContent = p.nama;
-  const info = [
-    ['Jenis kelamin', p.lp === 'P' ? 'Perempuan' : 'Laki-laki'],
-    ['Lahir', `${judulKata(p.tempatLahir)}, ${dmyPanjang(p.tanggalLahir)}`],
-    ['Alamat', `RT ${p.rt} / RW ${p.rw}, Dusun ${judulKata(p.dusun)}`],
-    ['Pekerjaan', judulKata(p.pekerjaan)]
-  ];
+  const info = p.samar
+    ? [['Alamat', `RT ${p.rt} / RW ${p.rw}, Dusun ${judulKata(p.dusun)}`]]
+    : [
+      ['Jenis kelamin', p.lp === 'P' ? 'Perempuan' : 'Laki-laki'],
+      ['Lahir', `${judulKata(p.tempatLahir)}, ${dmyPanjang(p.tanggalLahir)}`],
+      ['Alamat', `RT ${p.rt} / RW ${p.rw}, Dusun ${judulKata(p.dusun)}`],
+      ['Pekerjaan', judulKata(p.pekerjaan)]
+    ];
   $('#p-info').innerHTML = info.map(([a, b]) => `<dt>${a}</dt><dd>${esc(b)}</dd>`).join('');
   pilihChip('#p-keperluan', '');
   $('#p-ket').value = '';
@@ -573,8 +581,8 @@ async function simpanTamu(d) {
 }
 
 function layarTerima(d, no, online) {
-  const depan = judulKata(String(d.nama).split(' ')[0]);
-  $('#terima-judul').textContent = `Terima kasih, ${depan}`;
+  const depan = d.nama && !d.nama.includes('*') ? judulKata(String(d.nama).split(' ')[0]) : '';
+  $('#terima-judul').textContent = depan ? `Terima kasih, ${depan}` : 'Terima kasih';
   $('#terima-pesan').textContent = online || no ? 'Kunjungan Anda sudah tercatat di buku tamu.' : 'Data tersimpan di tablet dan akan terkirim otomatis saat internet tersambung.';
   $('#terima-no').textContent = no ? `Nomor urut ${no}` : '';
   tampil('terima');
@@ -655,7 +663,7 @@ $('#pin-pad').addEventListener('click', async e => {
     lokal.set('bt_sesi', { token: r.token, peran: r.peran, sampai: Date.now() + r.berlakuDetik * 1000 - 60000 });
     $('#dlg-pin').close();
     aturPeran();
-    toast(`Masuk sebagai ${r.peran}.`);
+    toast('Berhasil masuk.');
     tampil('daftar');
   } catch (err) {
     pesan($('#pin-pesan'), err.message, 'err');
@@ -755,17 +763,37 @@ function labelPeriode() {
   return a && b ? (a === b ? a : `${a} s.d. ${b}`) : 'Semua tanggal';
 }
 
+async function unduhExcel(rows, judulPeriode, namaFile) {
+  await muatSkrip(XLSX_URL);
+  const kunci = t => dmyKeIso(t.tanggal) + String(t.no).padStart(6, '0');
+  const urut = rows.slice().sort((a, b) => kunci(a).localeCompare(kunci(b)));
+  const aoa = [['BUKU TAMU DESA ' + (S.master.desa.nama || 'MERDEN').toUpperCase()], [judulPeriode], [], KOLOM_L].concat(urut.map(barisCetak));
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [6, 12, 28, 5, 16, 14, 12, 18, 24, 5, 5, 40].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Buku Tamu');
+  XLSX.writeFile(wb, namaFile);
+}
+
 $('#d-excel').addEventListener('click', () => sibuk($('#d-excel'), async () => {
   if (!S.daftar.length) { toast('Tidak ada data untuk diunduh.', true); return; }
+  try { await unduhExcel(S.daftar, 'Periode: ' + labelPeriode(), `Buku_Tamu_${labelPeriode().replace(/[^\w-]+/g, '_')}.xlsx`); }
+  catch (e) { toast(e.message, true); }
+}));
+
+/* ---------- laporan bulanan (satu tombol) ---------- */
+(function () { const d = new Date(); $('#l-bulan').value = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; })();
+$('#l-unduh').addEventListener('click', () => sibuk($('#l-unduh'), async () => {
+  const v = $('#l-bulan').value;
+  const m = v.match(/^(\d{4})-(\d{2})$/);
+  if (!m) { toast('Pilih bulan dulu.', true); return; }
+  const akhir = new Date(Number(m[1]), Number(m[2]), 0).getDate();
+  const namaBulan = `${BULAN[Number(m[2]) - 1]} ${m[1]}`;
   try {
-    await muatSkrip(XLSX_URL);
-    const aoa = [['BUKU TAMU DESA ' + (S.master.desa.nama || 'MERDEN').toUpperCase()], ['Periode: ' + labelPeriode()], [], KOLOM_L]
-      .concat(S.daftar.slice().reverse().map(barisCetak));
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [6, 12, 28, 5, 16, 14, 12, 18, 24, 5, 5, 40].map(w => ({ wch: w }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Buku Tamu');
-    XLSX.writeFile(wb, `Buku_Tamu_${labelPeriode().replace(/[^\w-]+/g, '_')}.xlsx`);
+    const r = await api('daftar', { filter: { dari: `${v}-01`, sampai: `${v}-${pad2(akhir)}`, batas: 100000 } }, { ulang: 1, timeout: 60000 });
+    if (!r.data.length) { toast(`Belum ada tamu pada ${namaBulan}.`, true); return; }
+    await unduhExcel(r.data, `Bulan: ${namaBulan} - ${r.total} tamu (L ${r.L}, P ${r.P})`, `Buku_Tamu_${namaBulan.replace(' ', '_')}.xlsx`);
+    toast(`Laporan ${namaBulan} diunduh (${r.total} tamu).`);
   } catch (e) { toast(e.message, true); }
 }));
 
@@ -839,8 +867,6 @@ async function muatRekap() {
 
 async function muatPengaturan() {
   perbaruiAntrean();
-  const c = conf();
-  $('#a-koneksi').textContent = `Perangkat: ${c.perangkat || '-'}`;
   if (!admin()) return;
   try {
     const r = await api('pengaturan', {}, { ulang: 1 });
@@ -868,7 +894,6 @@ $('#a-pin-simpan').addEventListener('click', () => sibuk($('#a-pin-simpan'), asy
   } catch (e) { pesan($('#a-pin-pesan'), e.message, 'err'); }
 }));
 
-$('#a-ubah-koneksi').addEventListener('click', () => { isiSetup(); $$('main > .view').forEach(v => { v.hidden = v.id !== 'v-setup'; }); S.view = 'setup'; });
 
 /* ---------- sumber data penduduk (Kartu Pintar) ---------- */
 
@@ -904,33 +929,6 @@ function tampilInfoSumber(d) {
     : 'Status: BELUM terhubung — pencarian NIK belum bisa dipakai.';
 }
 
-/* ================= PENGATURAN AWAL ================= */
-
-function isiSetup() {
-  const c = conf();
-  $('#s-url').value = c.url || '';
-  $('#s-kunci').value = c.kunci || '';
-  $('#s-perangkat').value = c.perangkat || '';
-}
-
-$('#s-simpan').addEventListener('click', () => sibuk($('#s-simpan'), async () => {
-  const msg = $('#s-pesan');
-  const url = $('#s-url').value.trim();
-  const kunci = $('#s-kunci').value.trim();
-  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) { pesan(msg, 'URL harus berbentuk https://script.google.com/macros/s/.../exec', 'err'); return; }
-  if (!kunci) { pesan(msg, 'Kunci API wajib diisi.', 'err'); return; }
-  const lama = conf();
-  const perangkat = $('#s-perangkat').value.trim() || lama.perangkat || 'TABLET-' + Math.random().toString(36).slice(2, 7).toUpperCase();
-  lokal.set('bt_conf', { url, kunci, perangkat });
-  pesan(msg, 'Menguji koneksi…');
-  try {
-    await api('ping', {}, { ulang: 1 });
-    await muatMaster();
-    pesan(msg, 'Koneksi berhasil.', 'ok');
-    tampil('nik');
-  } catch (e) { pesan(msg, 'Gagal: ' + e.message, 'err'); }
-}));
-
 /* ================= MULAI ================= */
 
 function mulai() {
@@ -942,12 +940,6 @@ function mulai() {
   window.addEventListener('offline', aturNet);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { kirimAntrean(); hangatkan(); } });
   setInterval(kirimAntrean, 60000);
-  if (!conf().url) {
-    isiSetup();
-    $$('main > .view').forEach(v => { v.hidden = v.id !== 'v-setup'; });
-    S.view = 'setup';
-    return;
-  }
   aturNet();
   perbaruiAntrean();
   muatMaster();

@@ -577,3 +577,90 @@ body.mengetik #p-simpan { position: static; box-shadow: none; }
 
 /* contoh isian tetap huruf biasa agar mudah dibaca */
 .upper::placeholder { text-transform: none; }
+
+/* ================= TABEL DAFTAR TAMU (profesional) ================= */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tabel-kartu { background: var(--kartu); border-radius: var(--r); box-shadow: var(--bayang); overflow: hidden; }
+.tabel-alat { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px 6px; }
+.tabel-alat input { flex: 1 1 240px; min-width: 0; }
+.tabel-alat label { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; color: var(--teks-2); white-space: nowrap; }
+.tabel-alat select { width: auto; min-height: 44px; padding: 8px 12px; }
+.urut-hp { display: none !important; }
+.tabel-kartu .ringkas { margin: 0; padding: 4px 16px 10px; font-size: .9rem; }
+.tabel-kartu .table-wrap { box-shadow: none; border-radius: 0; border-top: 1px solid var(--garis); max-height: 70vh; overflow: auto; }
+
+.tabel { font-size: .88rem; border-collapse: separate; border-spacing: 0; }
+.tabel th {
+  position: sticky; top: 0; z-index: 2; background: #F7F8FA; color: var(--teks-2);
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 12px; border-bottom: 1px solid var(--garis); white-space: nowrap; user-select: none;
+}
+.tabel th[data-k] { cursor: pointer; }
+.tabel th[data-k]:hover { background: #EEF0F3; color: var(--teks); }
+.tabel th[data-k]:focus-visible { outline: 2px solid var(--utama); outline-offset: -2px; }
+.tabel th .panah { font-size: .7rem; color: #BCC0C4; margin-left: 2px; }
+.tabel th.aktif { color: var(--utama); }
+.tabel th.aktif .panah { color: var(--utama); }
+.tabel td { padding: 12px; border-top: 0; border-bottom: 1px solid #EEF0F3; vertical-align: middle; }
+.tabel tbody tr:nth-child(even) td { background: #FCFCFD; }
+.tabel tbody tr:hover td { background: #F2F6FE; }
+.tabel .k0, .tabel .k3, .tabel .k9, .tabel .k10 { text-align: center; }
+.tabel .k0, .tabel .k1, .tabel .k5, .tabel .k9, .tabel .k10 { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tabel td.k0 { color: var(--teks-2); }
+.tabel td.k2 { font-weight: 600; min-width: 150px; }
+.tabel td.k8 { min-width: 130px; }
+.tabel td.k11 { min-width: 200px; max-width: 320px; }
+.lencana { display: inline-block; min-width: 26px; padding: 2px 8px; border-radius: 99px; font-weight: 700; font-size: .78rem; }
+.lencana.l { background: #E7F0FD; color: #0B4FB3; }
+.lencana.p { background: #FCE8F3; color: #A3125E; }
+.tabel td.aksi { white-space: nowrap; text-align: right; padding: 8px 12px; }
+.ikon-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: #E4E6EB; color: var(--teks); display: inline-grid; place-items: center; margin-left: 4px; }
+.ikon-btn svg { width: 18px; height: 18px; }
+.ikon-btn:hover { background: #D8DADF; }
+.ikon-btn.bahaya { background: var(--merah-muda); color: var(--merah); }
+.ikon-btn.bahaya:hover { background: #F8D0CC; }
+.tabel th.aksi-judul { width: 1%; }
+
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--garis); }
+.pager-tombol { display: flex; align-items: center; gap: 8px; }
+.pager .halaman { font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.pager .btn:disabled { opacity: .4; }
+
+@media (max-width: 640px) {
+  .urut-hp { display: flex !important; }
+  .tabel-kartu { background: transparent; box-shadow: none; overflow: visible; }
+  .tabel-alat { padding: 0 0 6px; }
+  .tabel-alat input { flex-basis: 100%; background: #fff; }
+  .tabel-kartu .ringkas { padding: 4px 0 8px; }
+  .tabel-kartu .table-wrap { border-top: 0; max-height: none; overflow: visible; }
+  .tabel tbody tr:nth-child(even) td, .tabel tbody tr:hover td { background: transparent; }
+  .tabel td { border-bottom: 0; padding: 0; }
+  .tabel td.k2, .tabel td.k8, .tabel td.k11 { min-width: 0; max-width: none; }
+  .tabel .k0, .tabel .k3, .tabel .k9, .tabel .k10 { text-align: left; }
+  .tabel td.aksi { text-align: right; }
+  .pager { border-top: 0; padding: 8px 0; background: transparent; }
+  .pager-tombol { width: 100%; justify-content: space-between; }
+}
+
+/* tabel lebih rapat; kolom aksi selalu terlihat di kanan; tanpa gulir ganda */
+.tabel-kartu .table-wrap { max-height: none; overflow-x: auto; overflow-y: visible; }
+.tabel th { position: static; padding: 11px 8px; }
+.tabel td { padding: 10px 8px; }
+.tabel { font-size: .85rem; }
+.tabel td.k2 { min-width: 130px; }
+.tabel td.k8 { min-width: 110px; }
+.tabel td.k11 { min-width: 170px; max-width: 260px; }
+.tabel td.aksi, .tabel th.aksi-judul { position: sticky; right: 0; z-index: 1; background: #fff; box-shadow: -6px 0 8px -6px rgba(0, 0, 0, .18); }
+.tabel th.aksi-judul { background: #F7F8FA; }
+.tabel tbody tr:nth-child(even) td.aksi { background: #FCFCFD; }
+.tabel tbody tr:hover td.aksi { background: #F2F6FE; }
+@media (max-width: 640px) {
+  .tabel td.aksi { position: static; box-shadow: none; background: transparent !important; }
+}
+
+/* layar laporan lebih lebar & judul kolom panjang boleh 2 baris, supaya semua kolom muat di laptop */
+main:has(> #v-daftar:not([hidden])) { max-width: 1440px; }
+.tabel th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
+.tabel th.k0, .tabel th.k3, .tabel th.k9, .tabel th.k10 { white-space: nowrap; }
+.tabel th.k5, .tabel th.k7 { min-width: 84px; }
+.tabel td.k4, .tabel td.k6 { white-space: nowrap; }

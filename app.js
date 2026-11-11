@@ -764,7 +764,7 @@ const urutKunci = t => dmyKeIso(t.tanggal) + String(t.no).padStart(6, '0');
 
 (function () { const d = new Date(); $('#l-bulan').value = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; })();
 $('#l-bulan').addEventListener('change', () => muatLaporan());
-$('#d-q').addEventListener('input', () => renderDaftar());
+$('#d-q').addEventListener('input', () => { S.tabel.hal = 1; renderDaftar(); });
 
 function infoBulan() {
   const v = $('#l-bulan').value;
@@ -815,6 +815,7 @@ async function muatLaporan() {
       <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki / Perempuan</span></div>
       <div><b>${jmlHariIni}</b><span>Tamu hari ini</span></div>
       <div><b class="kecil">${esc(kpTeratas ? labelKeperluan(kpTeratas) : '-')}</b><span>Keperluan terbanyak</span></div>`;
+    S.tabel.hal = 1;
     renderDaftar();
   } catch (e) {
     S.bulan = null;
@@ -822,29 +823,122 @@ async function muatLaporan() {
   }
 }
 
+/* ---------- tabel: urutkan, jumlah baris per halaman, halaman ---------- */
+
+// kunci tiap kolom: [nama properti, jenis urutan]
+const KOLOM_TABEL = [
+  ['no', 'angka'], ['tanggal', 'tgl'], ['nama', 'teks'], ['lp', 'teks'], ['tempatLahir', 'teks'], ['tanggalLahir', 'tgl'],
+  ['agama', 'teks'], ['status', 'teks'], ['pekerjaan', 'teks'], ['rt', 'angka'], ['rw', 'angka'], ['keterangan', 'teks']
+];
+S.tabel = { kolom: 1, arah: -1, hal: 1, perHal: Number(lokal.get('bt_perhal', 10)) || 10 };
+$('#d-perhal').value = String(S.tabel.perHal);
+
+function nilaiUrut(t, k) {
+  const [p, jenis] = KOLOM_TABEL[k];
+  const v = t[p];
+  if (jenis === 'angka') return /^\d+$/.test(String(v)) ? Number(v) : -1;
+  if (jenis === 'tgl') return dmyKeIso(v) || '';
+  return String(v || '').toUpperCase();
+}
+
 function renderDaftar() {
   const tb = $('#d-tabel tbody');
   if (!S.bulan) return;
   const q = $('#d-q').value.trim().toUpperCase();
-  S.daftar = S.bulan.rows.filter(t => !q || `${t.nama} ${t.keterangan} ${t.nik} ${t.dusun}`.toUpperCase().includes(q));
-  $('#d-ringkas').textContent = q ? `${S.daftar.length} dari ${S.bulan.rows.length} tamu cocok dengan "${$('#d-q').value.trim()}"` : `Daftar tamu ${S.bulan.info.nama} (terbaru di atas)`;
-  tb.innerHTML = S.daftar.length ? S.daftar.map((t, i) => {
+  const cocok = S.bulan.rows.filter(t => !q || `${t.nama} ${t.keterangan} ${t.nik} ${t.dusun} ${t.pekerjaan}`.toUpperCase().includes(q));
+
+  // urutkan (kolom kedua: NO, agar tamu di hari yang sama tetap berurutan)
+  const { kolom, arah } = S.tabel;
+  cocok.sort((a, b) => {
+    const x = nilaiUrut(a, kolom), y = nilaiUrut(b, kolom);
+    if (x !== y) return (x < y ? -1 : 1) * arah;
+    return (Number(a.no) - Number(b.no)) * arah;
+  });
+  S.daftar = cocok;
+
+  // halaman
+  const total = cocok.length, per = S.tabel.perHal;
+  const jmlHal = Math.max(1, Math.ceil(total / per));
+  S.tabel.hal = Math.min(Math.max(1, S.tabel.hal), jmlHal);
+  const awal = (S.tabel.hal - 1) * per;
+  const tampilan = cocok.slice(awal, awal + per);
+
+  const pilihanUrut = `${kolom}:${arah}`;
+  if ([...$('#d-urut').options].some(o => o.value === pilihanUrut)) $('#d-urut').value = pilihanUrut;
+
+  // judul kolom: tanda panah urutan
+  $$('#d-tabel th[data-k]').forEach(th => {
+    const k = Number(th.dataset.k), aktif = k === kolom;
+    th.classList.toggle('aktif', aktif);
+    th.setAttribute('aria-sort', aktif ? (arah > 0 ? 'ascending' : 'descending') : 'none');
+    $('.panah', th).textContent = aktif ? (arah > 0 ? '▲' : '▼') : '↕';
+  });
+
+  $('#d-ringkas').textContent = q
+    ? `${total} dari ${S.bulan.rows.length} tamu cocok dengan "${$('#d-q').value.trim()}"`
+    : `Daftar tamu ${S.bulan.info.nama}`;
+  $('#d-info').textContent = total ? `Menampilkan ${awal + 1}–${awal + tampilan.length} dari ${total} tamu` : 'Tidak ada data';
+  $('#d-halaman').textContent = `Halaman ${S.tabel.hal} dari ${jmlHal}`;
+  $('#d-prev').disabled = S.tabel.hal <= 1;
+  $('#d-next').disabled = S.tabel.hal >= jmlHal;
+  $('#d-pager').hidden = total <= per && S.tabel.hal === 1;
+
+  tb.innerHTML = tampilan.length ? tampilan.map(t => {
     const v = barisCetak(t);
-    return `<tr>${v.map((x, j) => `<td data-l="${KOLOM_L[j]}">${esc(x)}</td>`).join('')}
-      <td class="aksi"><button class="btn btn-ghost btn-sm" data-ubah="${i}">Ubah</button><button class="btn btn-danger btn-sm" data-hapus="${i}">Hapus</button></td></tr>`;
+    const sel = v.map((x, j) => {
+      let isi = esc(x);
+      if (j === 3) isi = `<span class="lencana ${x === 'P' ? 'p' : 'l'}">${esc(x)}</span>`;
+      if (j === 11) isi = `<span class="ket">${esc(x)}</span>`;
+      return `<td data-l="${KOLOM_L[j]}" class="k${j}">${isi}</td>`;
+    }).join('');
+    return `<tr>${sel}<td class="aksi">
+      <button class="ikon-btn" data-ubah="${esc(t.id)}" title="Ubah data" aria-label="Ubah data ${esc(t.nama)}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="M14 6l4 4"/></svg></button>
+      <button class="ikon-btn bahaya" data-hapus="${esc(t.id)}" title="Hapus data" aria-label="Hapus data ${esc(t.nama)}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    </td></tr>`;
   }).join('') : `<tr><td colspan="13" class="kosong">${q ? 'Tidak ada yang cocok.' : 'Belum ada tamu pada bulan ini.'}</td></tr>`;
 }
 
+// klik judul kolom = urutkan; klik lagi = balik arah
+$('#d-tabel thead').addEventListener('click', e => {
+  const th = e.target.closest('th[data-k]');
+  if (!th) return;
+  const k = Number(th.dataset.k);
+  if (S.tabel.kolom === k) S.tabel.arah *= -1;
+  else { S.tabel.kolom = k; S.tabel.arah = KOLOM_TABEL[k][1] === 'teks' ? 1 : -1; }
+  S.tabel.hal = 1;
+  renderDaftar();
+});
+$('#d-tabel thead').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('th[data-k]')) { e.preventDefault(); e.target.closest('th[data-k]').click(); }
+});
+$('#d-urut').addEventListener('change', e => {
+  const [k, a] = e.target.value.split(':').map(Number);
+  S.tabel.kolom = k; S.tabel.arah = a; S.tabel.hal = 1;
+  renderDaftar();
+});
+$('#d-perhal').addEventListener('change', e => {
+  S.tabel.perHal = Number(e.target.value) || 10;
+  lokal.set('bt_perhal', S.tabel.perHal);
+  S.tabel.hal = 1;
+  renderDaftar();
+});
+const pindahHal = d => { S.tabel.hal += d; renderDaftar(); $('#d-tabel').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
+$('#d-prev').addEventListener('click', () => pindahHal(-1));
+$('#d-next').addEventListener('click', () => pindahHal(1));
+
 $('#d-tabel').addEventListener('click', async e => {
   const u = e.target.closest('[data-ubah]'), h = e.target.closest('[data-hapus]');
+  const cari = id => S.daftar.find(t => t.id === id);
   if (u) {
-    const t = S.daftar[Number(u.dataset.ubah)];
+    const t = cari(u.dataset.ubah);
+    if (!t) return;
     S.mode = 'ubah'; S.editData = t; S.terisi = null;
     tampil('form');
     siapkanForm(t);
   }
   if (h) {
-    const t = S.daftar[Number(h.dataset.hapus)];
+    const t = cari(h.dataset.hapus);
+    if (!t) return;
     const alasan = prompt(`Hapus data ${t.nama} (No. ${t.no})?\nTulis alasan penghapusan:`);
     if (alasan === null) return;
     try { await api('hapus', { id: t.id, alasan }); toast('Data dihapus.'); muatLaporan(); } catch (err) { toast(err.message, true); }

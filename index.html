@@ -212,18 +212,52 @@
         </div>
         <p class="muted kecil">File Excel berisi kop desa, daftar tamu lengkap, tanda tangan Kepala Desa, dan sheet <b>Rekap</b> (jumlah per keperluan, dusun, umur, tanggal).</p>
       </div>
-      <div class="cari-daftar">
-        <input type="search" id="d-q" enterkeyhint="search" autocorrect="off" spellcheck="false" placeholder="Cari nama atau keperluan di bulan ini…" aria-label="Cari tamu">
-      </div>
-      <p id="d-ringkas" class="ringkas"></p>
-      <div class="table-wrap">
-        <table class="tabel" id="d-tabel">
-          <thead><tr>
-            <th>NO</th><th>TANGGAL</th><th>NAMA</th><th>L/P</th><th>TEMPAT LAHIR</th><th>TANGGAL LAHIR</th>
-            <th>AGAMA</th><th>STATUS PERKAWINAN</th><th>PEKERJAAN</th><th>RT</th><th>RW</th><th>KETERANGAN</th><th></th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="tabel-kartu">
+        <div class="tabel-alat">
+          <input type="search" id="d-q" enterkeyhint="search" autocorrect="off" spellcheck="false" placeholder="Cari nama, keperluan, dusun…" aria-label="Cari tamu">
+          <label class="urut-hp">Urutkan
+            <select id="d-urut" aria-label="Urutkan daftar">
+              <option value="1:-1">Terbaru</option><option value="1:1">Terlama</option>
+              <option value="2:1">Nama A–Z</option><option value="2:-1">Nama Z–A</option>
+              <option value="11:1">Keperluan</option>
+            </select>
+          </label>
+          <label class="perhal">Tampilkan
+            <select id="d-perhal" aria-label="Jumlah baris per halaman">
+              <option value="10">10</option><option value="25">25</option><option value="50">50</option>
+            </select>
+            baris
+          </label>
+        </div>
+        <p id="d-ringkas" class="ringkas"></p>
+        <div class="table-wrap">
+          <table class="tabel" id="d-tabel">
+            <thead><tr>
+            <th data-k="0" class="k0" tabindex="0" aria-sort="none">NO <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="1" class="k1" tabindex="0" aria-sort="none">TANGGAL <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="2" class="k2" tabindex="0" aria-sort="none">NAMA <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="3" class="k3" tabindex="0" aria-sort="none">L/P <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="4" class="k4" tabindex="0" aria-sort="none">TEMPAT LAHIR <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="5" class="k5" tabindex="0" aria-sort="none">TANGGAL LAHIR <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="6" class="k6" tabindex="0" aria-sort="none">AGAMA <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="7" class="k7" tabindex="0" aria-sort="none">STATUS PERKAWINAN <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="8" class="k8" tabindex="0" aria-sort="none">PEKERJAAN <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="9" class="k9" tabindex="0" aria-sort="none">RT <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="10" class="k10" tabindex="0" aria-sort="none">RW <span class="panah" aria-hidden="true">↕</span></th>
+            <th data-k="11" class="k11" tabindex="0" aria-sort="none">KETERANGAN <span class="panah" aria-hidden="true">↕</span></th>
+            <th class="aksi-judul"><span class="sr">Aksi</span></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pager" id="d-pager-wrap">
+          <span id="d-info" class="muted"></span>
+          <div class="pager-tombol" id="d-pager">
+            <button id="d-prev" class="btn btn-ghost btn-sm" aria-label="Halaman sebelumnya">‹ Sebelumnya</button>
+            <span id="d-halaman" class="halaman"></span>
+            <button id="d-next" class="btn btn-ghost btn-sm" aria-label="Halaman berikutnya">Berikutnya ›</button>
+          </div>
+        </div>
       </div>
     </section>
 

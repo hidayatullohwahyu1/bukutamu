@@ -99,9 +99,9 @@ async function api(action, data = {}, opsi = {}) {
     clearTimeout(to);
     S.lastApi = Date.now();
     let j;
-    try { j = await res.json(); } catch (e) { throw new Error('Jawaban server tidak valid. Periksa URL server.'); }
+    try { j = await res.json(); } catch (e) { const err = new Error('Server sedang sibuk. Coba lagi sebentar.'); err.jaringan = true; throw err; }
     if (!j.ok) {
-      if (j.pesan === 'SESI_HABIS') { akhiriSesi(); throw new Error('Sesi petugas habis. Silakan masuk lagi.'); }
+      if (j.pesan === 'SESI_HABIS') { akhiriSesi(); throw new Error('Sesi admin habis. Silakan tekan Admin dan masuk lagi.'); }
       throw new Error(j.pesan || 'Terjadi kesalahan.');
     }
     return j;
@@ -296,8 +296,13 @@ function renderNik() {
   $('#nik-cari').disabled = n.length !== 16;
 }
 
+// getaran halus hanya saat layar benar-benar disentuh (Chrome menolak getar tanpa sentuhan pengguna)
+function getar() {
+  const ua = navigator.userActivation;
+  if (navigator.vibrate && (!ua || ua.hasBeenActive)) { try { navigator.vibrate(8); } catch (e) { /* abaikan */ } }
+}
+
 function tekanNik(k) {
-  if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* abaikan */ } }
   if (k === 'hapus') S.nik = S.nik.slice(0, -1);
   else if (k === 'cari') { if (S.nik.length === 16) cariNik(); return; }
   else if (/^\d$/.test(k) && S.nik.length < 16) S.nik += k;
@@ -308,7 +313,7 @@ function tekanNik(k) {
 
 $('#nik-pad').addEventListener('click', e => {
   const b = e.target.closest('button');
-  if (b && !b.disabled) tekanNik(b.dataset.k || b.textContent.trim());
+  if (b && !b.disabled) { if (e.isTrusted) getar(); tekanNik(b.dataset.k || b.textContent.trim()); }
 });
 // tahan tombol hapus = kosongkan
 (function () {
@@ -631,6 +636,8 @@ async function kirimSatu(item) {
     await Antrean.hapus(item.id);
     return r.no;
   } catch (e) {
+    // COBA_LAGI = server sementara tidak bisa membaca Kartu Pintar: diperlakukan seperti gangguan jaringan
+    if (/^COBA_LAGI/.test(e.message)) e.jaringan = true;
     if (!e.jaringan) { item.galat = e.message; await Antrean.tambah(item); }
     throw e;
   } finally {
@@ -649,12 +656,21 @@ async function simpanTamu(d) {
     try { const r = await api('simpan', { data: d }); return layarTerima(d, r.no, true); }
     catch (err) { toast(err.message, true); return; }
   }
-  let no = null;
+  let hasil = { no: null };
   if (navigator.onLine) {
-    no = await Promise.race([kirimSatu(item).catch(() => null), tunggu(TUNGGU_NOMOR_MS).then(() => null)]);
+    hasil = await Promise.race([
+      kirimSatu(item).then(no => ({ no }), e => ({ no: null, galat: e.jaringan ? null : e.message })),
+      tunggu(TUNGGU_NOMOR_MS).then(() => ({ no: null }))
+    ]);
   }
   perbaruiAntrean();
-  layarTerima(d, no, navigator.onLine);
+  if (hasil.galat) {
+    // jangan tampilkan "berhasil" bila server menolak data
+    toast('Data belum diterima server: ' + hasil.galat, true);
+    if (S.view === 'form') { tampilLangkah(1); return; }
+    return;
+  }
+  layarTerima(d, hasil.no, navigator.onLine);
 }
 
 function layarTerima(d, no, online) {
@@ -714,7 +730,7 @@ $('#a-antrean-list').addEventListener('click', async e => {
 let _pin = '';
 $('#btn-masuk').addEventListener('click', async () => {
   if (petugas()) {
-    if (!confirm('Keluar dari mode petugas?')) return;
+    if (!confirm('Keluar dari mode admin?')) return;
     api('logout').catch(() => { /* abaikan */ });
     akhiriSesi();
     tampil('nik');
@@ -797,14 +813,17 @@ function hitungRekap(rows, b) {
   return r;
 }
 
+let _muatKe = 0;
 async function muatLaporan() {
   const b = infoBulan();
   if (!b) return;
+  const ke = ++_muatKe;
   const tb = $('#d-tabel tbody');
   tb.innerHTML = '<tr><td colspan="13" class="kosong">Memuat…</td></tr>';
   $('#l-kpi').innerHTML = '';
   try {
     const r = await api('daftar', { filter: { dari: b.dari, sampai: b.sampai, batas: 100000 } }, { ulang: 1, timeout: 60000 });
+    if (ke !== _muatKe) return; // sudah ada permintaan bulan lain yang lebih baru
     S.bulan = { info: b, rows: r.data.slice().sort((x, y) => urutKunci(y).localeCompare(urutKunci(x))) };
     const rk = hitungRekap(S.bulan.rows, b);
     const hariIni = isoKeDmy(isoHariIni());
@@ -813,11 +832,12 @@ async function muatLaporan() {
     $('#l-kpi').innerHTML = `
       <div><b>${rk.total}</b><span>Tamu ${esc(b.nama)}</span></div>
       <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki / Perempuan</span></div>
-      <div><b>${jmlHariIni}</b><span>Tamu hari ini</span></div>
+      <div><b>${hariIni.endsWith(b.v.slice(0, 4)) && hariIni.slice(3, 5) === b.v.slice(5) ? jmlHariIni : '–'}</b><span>Tamu hari ini</span></div>
       <div><b class="kecil">${esc(kpTeratas ? labelKeperluan(kpTeratas) : '-')}</b><span>Keperluan terbanyak</span></div>`;
     S.tabel.hal = 1;
     renderDaftar();
   } catch (e) {
+    if (ke !== _muatKe) return;
     S.bulan = null;
     tb.innerHTML = `<tr><td colspan="13" class="kosong">${esc(e.message)}</td></tr>`;
   }

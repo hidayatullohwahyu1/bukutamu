@@ -1,6 +1,6 @@
 /* Service worker Buku Tamu Desa Merden
  * Naikkan VERSI setiap kali file aplikasi diubah agar tablet mengambil versi baru. */
-const VERSI = 'bukutamu-v8';
+const VERSI = 'bukutamu-v9';
 const ASET = [
   './',
   './index.html',
@@ -13,7 +13,7 @@ const ASET = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSI).then(c => c.addAll(ASET)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSI).then(c => c.addAll(ASET.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {

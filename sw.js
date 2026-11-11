@@ -1,6 +1,6 @@
 /* Service worker Buku Tamu Desa Merden
  * Naikkan VERSI setiap kali file aplikasi diubah agar tablet mengambil versi baru. */
-const VERSI = 'bukutamu-v4';
+const VERSI = 'bukutamu-v5';
 const ASET = [
   './',
   './index.html',
@@ -44,7 +44,7 @@ self.addEventListener('fetch', e => {
 
   // Halaman: ambil dari jaringan, cadangan dari cache saat offline
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(res => {
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
       const salin = res.clone();
       caches.open(VERSI).then(c => c.put('./index.html', salin));
       return res;
@@ -52,12 +52,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Aset: dari cache dulu, diperbarui di belakang layar
-  e.respondWith(caches.match(req).then(hit => {
-    const ambil = fetch(req).then(res => {
-      if (res.ok) { const salin = res.clone(); caches.open(VERSI).then(c => c.put(req, salin)); }
-      return res;
-    }).catch(() => hit);
-    return hit || ambil;
-  }));
+  // Aset aplikasi: selalu ambil versi terbaru dari jaringan (tanpa cache HTTP),
+  // cadangan dari cache bila offline — tampilan & kode tidak pernah berbeda versi.
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
+    if (res.ok) { const salin = res.clone(); caches.open(VERSI).then(c => c.put(req, salin)); }
+    return res;
+  }).catch(() => caches.match(req, { ignoreSearch: true })));
 });

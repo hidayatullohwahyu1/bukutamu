@@ -946,6 +946,42 @@ function mulai() {
   tampil('nik');
 }
 
+/* ================= PASANG APLIKASI (PWA) ================= */
+
+let _promptPasang = null;
+const sudahTerpasang = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+function aturTombolPasang() { $('#btn-pasang').hidden = sudahTerpasang(); }
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();            // tahan banner bawaan; pakai tombol "Pasang" sendiri
+  _promptPasang = e;
+  aturTombolPasang();
+});
+window.addEventListener('appinstalled', () => {
+  _promptPasang = null;
+  $('#btn-pasang').hidden = true;
+  toast('Aplikasi terpasang. Buka dari ikon Buku Tamu di layar HP.');
+});
+$('#btn-pasang').addEventListener('click', async () => {
+  if (_promptPasang) {
+    _promptPasang.prompt();
+    const pilihan = await _promptPasang.userChoice.catch(() => null);
+    _promptPasang = null;
+    if (pilihan && pilihan.outcome === 'accepted') $('#btn-pasang').hidden = true;
+    return;
+  }
+  // iPhone / browser di dalam aplikasi lain: tampilkan panduan
+  const ua = navigator.userAgent;
+  const dalamApp = /FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(ua);
+  $('#pasang-catatan').textContent = dalamApp
+    ? 'Anda membuka dari dalam aplikasi lain. Salin alamat ini lalu buka di Google Chrome agar bisa dipasang.'
+    : 'Ikuti langkah sesuai jenis HP Anda:';
+  $('#dlg-pasang').showModal();
+});
+$('#pasang-tutup').addEventListener('click', () => $('#dlg-pasang').close());
+window.matchMedia('(display-mode: standalone)').addEventListener('change', aturTombolPasang);
+aturTombolPasang();
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { /* abaikan */ }));
 }

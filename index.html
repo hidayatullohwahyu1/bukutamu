@@ -31,6 +31,9 @@
       <span id="jam" class="jam"></span>
       <span id="net" class="dot" title="Online"></span>
       <span id="antrean-pill" class="pill" hidden></span>
+      <button id="btn-pasang" class="btn-top btn-pasang" hidden aria-label="Pasang aplikasi di HP">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>Pasang</span>
+      </button>
       <button id="btn-masuk" class="btn-top">Admin</button>
     </div>
   </header>
@@ -335,6 +338,27 @@
       <button type="button">4</button><button type="button">5</button><button type="button">6</button>
       <button type="button">7</button><button type="button">8</button><button type="button">9</button>
       <button type="button" data-k="batal" class="k-alt">Batal</button><button type="button">0</button><button type="button" data-k="hapus" class="k-alt" aria-label="Hapus">&#9003;</button>
+    </div>
+  </dialog>
+
+  <!-- panduan pasang aplikasi (bila tombol pasang otomatis tidak tersedia) -->
+  <dialog id="dlg-pasang">
+    <h2>Pasang Buku Tamu di HP</h2>
+    <p id="pasang-catatan" class="muted"></p>
+    <p><b>HP Android (Chrome)</b></p>
+    <ol class="pasang-langkah">
+      <li>Buka alamat aplikasi ini di <b>Google Chrome</b> (bukan dari dalam WhatsApp/Facebook).</li>
+      <li>Ketuk menu <b>⋮</b> di kanan atas.</li>
+      <li>Pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>, lalu <b>Instal</b>.</li>
+    </ol>
+    <p><b>iPhone (Safari)</b></p>
+    <ol class="pasang-langkah">
+      <li>Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).</li>
+      <li>Pilih <b>Tambahkan ke Layar Utama</b>, lalu <b>Tambah</b>.</li>
+    </ol>
+    <p class="muted">Setelah terpasang, buka dari ikon <b>Buku Tamu</b> di layar HP.</p>
+    <div class="dlg-actions">
+      <button id="pasang-tutup" class="btn btn-primary">Mengerti</button>
     </div>
   </dialog>
 

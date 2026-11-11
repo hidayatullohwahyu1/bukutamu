@@ -4,9 +4,6 @@
 'use strict';
 
 const XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-const KOLOM_PENDUDUK = ['NIK', 'NAMA', 'TEMPAT_LAHIR', 'TGL_LAHIR', 'JK', 'AGAMA', 'PEKERJAAN',
-  'STATUS_KAWIN', 'RT', 'RW', 'DUSUN', 'NO_KK', 'NAMA_KEPALA', 'PENDIDIKAN', 'GOL_DARAH',
-  'TGL_KAWIN', 'HUBUNGAN', 'AYAH', 'IBU', 'ALAMAT'];
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BATAS_DIAM_MS = 60000;   // layar tamu kembali ke awal setelah 1 menit tanpa sentuhan
@@ -845,10 +842,12 @@ async function muatPengaturan() {
   const c = conf();
   $('#a-koneksi').textContent = `Perangkat: ${c.perangkat || '-'}`;
   if (!admin()) return;
-  $('#a-impor-info').textContent = S.master && S.master.tanggalImpor ? `Impor terakhir: ${S.master.tanggalImpor}` : 'Data penduduk belum pernah diimpor.';
   try {
     const r = await api('pengaturan', {}, { ulang: 1 });
     ['NAMA_DESA', 'KECAMATAN', 'KABUPATEN', 'NAMA_KADES', 'RESET_NO'].forEach(k => { $('#a-' + k).value = r.data[k] || (k === 'RESET_NO' ? 'TAHUN' : ''); });
+    $('#a-SUMBER_PENDUDUK').value = r.data.SUMBER_PENDUDUK || '';
+    $('#a-SHEET_PENDUDUK').value = r.data.SHEET_PENDUDUK || 'DATA_KK';
+    tampilInfoSumber(r.data);
   } catch (e) { pesan($('#a-desa-pesan'), e.message, 'err'); }
 }
 
@@ -871,72 +870,39 @@ $('#a-pin-simpan').addEventListener('click', () => sibuk($('#a-pin-simpan'), asy
 
 $('#a-ubah-koneksi').addEventListener('click', () => { isiSetup(); $$('main > .view').forEach(v => { v.hidden = v.id !== 'v-setup'; }); S.view = 'setup'; });
 
-/* ---------- impor data penduduk ---------- */
+/* ---------- sumber data penduduk (Kartu Pintar) ---------- */
 
-let _impor = null;
-function selKeTeks(v) {
-  if (v == null) return '';
-  if (v instanceof Date) {
-    const d = new Date(v.getTime() + 12 * 3600 * 1000);
-    return `${pad2(d.getUTCDate())}-${pad2(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`;
-  }
-  return String(v).trim();
-}
+const ringkasSumber = r => `Terhubung ke sheet "${r.sheet}": ${Number(r.jumlah).toLocaleString('id-ID')} penduduk, ${r.jumlahRw} RW, ${r.jumlahPekerjaan} jenis pekerjaan.` +
+  (r.nikGanda ? ` NIK ganda: ${r.nikGanda}.` : '') + (r.tanpaNik ? ` Tanpa NIK: ${r.tanpaNik}.` : '') + (r.nikSalah ? ` NIK tidak 16 angka: ${r.nikSalah}.` : '');
 
-$('#a-file').addEventListener('change', async e => {
-  const f = e.target.files[0];
-  const msg = $('#a-impor-pesan');
-  _impor = null;
-  $('#a-impor').disabled = true;
-  if (!f) return;
-  pesan(msg, 'Membaca file…');
+$('#a-sumber-simpan').addEventListener('click', () => sibuk($('#a-sumber-simpan'), async () => {
+  const msg = $('#a-sumber-pesan');
+  const url = $('#a-SUMBER_PENDUDUK').value.trim();
+  if (!/docs\.google\.com\/spreadsheets\/d\//.test(url)) { pesan(msg, 'Tempel alamat lengkap spreadsheet Kartu Pintar (https://docs.google.com/spreadsheets/d/...).', 'err'); return; }
+  pesan(msg, 'Menghubungkan dan memeriksa data… (bisa sampai 30 detik)');
   try {
-    await muatSkrip(XLSX_URL);
-    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true });
-    let nama = wb.SheetNames.includes('DATA_KK') ? 'DATA_KK' : wb.SheetNames.find(n => {
-      const h = (XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1 })[0] || []).map(x => String(x).trim().toUpperCase());
-      return h.includes('NIK') && h.includes('NAMA');
-    });
-    if (!nama) throw new Error('Tidak ada sheet berkolom NIK dan NAMA.');
-    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nama], { header: 1, raw: true, defval: '' });
-    const head = (aoa[0] || []).map(x => String(x).trim().toUpperCase());
-    const kurang = KOLOM_PENDUDUK.slice(0, 11).filter(k => !head.includes(k));
-    if (kurang.length) throw new Error('Kolom tidak ditemukan: ' + kurang.join(', '));
-    const idx = KOLOM_PENDUDUK.map(k => head.indexOf(k));
-    const rows = aoa.slice(1).filter(r => r.some(x => x !== '' && x != null)).map(r => idx.map(i => (i < 0 ? '' : selKeTeks(r[i]))));
-    const nikSalah = rows.filter(r => !/^\d{16}$/.test(r[0])).length;
-    _impor = { head, rows };
-    pesan(msg, `Sheet "${nama}": ${rows.length.toLocaleString('id-ID')} baris siap diimpor` + (nikSalah ? ` (${nikSalah} NIK tidak 16 angka, tetap diimpor).` : '.'), 'ok');
-    $('#a-impor').disabled = false;
-  } catch (err) { pesan(msg, err.message, 'err'); }
-});
+    const r = await api('pengaturan', { set: { SUMBER_PENDUDUK: url, SHEET_PENDUDUK: $('#a-SHEET_PENDUDUK').value.trim() || 'DATA_KK' } }, { timeout: 120000 });
+    pesan(msg, ringkasSumber(r.cek), 'ok');
+    await muatMaster();
+    tampilInfoSumber(r.data);
+  } catch (e) { pesan(msg, e.message, 'err'); }
+}));
 
-$('#a-impor').addEventListener('click', () => {
-  if (!_impor || !confirm(`Ganti seluruh data penduduk dengan ${_impor.rows.length} baris dari file ini?`)) return;
-  sibuk($('#a-impor'), async () => {
-    const msg = $('#a-impor-pesan'), bar = $('#a-progres');
-    bar.hidden = false; bar.value = 0;
-    try {
-      await api('imporPenduduk', { tahap: 'mulai', header: _impor.head }, { ulang: 1 });
-      const POTONG = 1500, n = _impor.rows.length;
-      for (let i = 0; i < n; i += POTONG) {
-        await api('imporPenduduk', { tahap: 'tambah', rows: _impor.rows.slice(i, i + POTONG) }, { timeout: 90000 });
-        const s = Math.min(i + POTONG, n);
-        bar.value = Math.round(s / n * 100);
-        pesan(msg, `Mengirim ${s.toLocaleString('id-ID')} dari ${n.toLocaleString('id-ID')} baris…`);
-      }
-      const r = await api('imporPenduduk', { tahap: 'selesai' }, { timeout: 90000 });
-      pesan(msg, `Selesai: ${r.jumlah.toLocaleString('id-ID')} penduduk, ${r.jumlahRw} RW, ${r.jumlahPekerjaan} jenis pekerjaan. NIK ganda: ${r.nikGanda}, tanpa NIK: ${r.tanpaNik}.`, 'ok');
-      _impor = null;
-      $('#a-file').value = '';
-      $('#a-impor').disabled = true;
-      await muatMaster();
-      muatPengaturan();
-    } catch (e) {
-      pesan(msg, 'Impor gagal: ' + e.message + ' Ulangi impor dari awal.', 'err');
-    } finally { bar.hidden = true; }
-  });
-});
+$('#a-segarkan').addEventListener('click', () => sibuk($('#a-segarkan'), async () => {
+  const msg = $('#a-sumber-pesan');
+  try {
+    const r = await api('segarkanPenduduk', {}, { timeout: 120000 });
+    pesan(msg, ringkasSumber(r), 'ok');
+    await muatMaster();
+    $('#a-sumber-info').textContent = `Pilihan terakhir disegarkan: ${r.waktu}`;
+  } catch (e) { pesan(msg, e.message, 'err'); }
+}));
+
+function tampilInfoSumber(d) {
+  $('#a-sumber-info').textContent = d.SUMBER_PENDUDUK
+    ? `Status: terhubung. Pilihan terakhir disegarkan: ${d.TANGGAL_SEGAR || '-'}`
+    : 'Status: BELUM terhubung — pencarian NIK belum bisa dipakai.';
+}
 
 /* ================= PENGATURAN AWAL ================= */
 

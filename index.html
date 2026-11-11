@@ -278,13 +278,22 @@
 
       <div data-peran="admin">
         <div class="card">
-          <h2>Data Penduduk</h2>
-          <p class="muted" id="a-impor-info"></p>
-          <p class="muted">Pilih file Excel data penduduk (sheet <b>DATA_KK</b>). Isi lama akan diganti; buku tamu tidak berubah.</p>
-          <input type="file" id="a-file" accept=".xlsx,.xls">
-          <p id="a-impor-pesan" class="msg" role="status"></p>
-          <progress id="a-progres" max="100" value="0" hidden></progress>
-          <button id="a-impor" class="btn btn-primary" disabled>Mulai Impor</button>
+          <h2>Sumber Data Penduduk (Kartu Pintar)</h2>
+          <p class="muted">Data penduduk dibaca langsung dari spreadsheet database Kartu Pintar, jadi selalu terbaru tanpa impor ulang.</p>
+          <p class="muted" id="a-sumber-info"></p>
+          <div class="grid">
+            <label class="span2">Alamat spreadsheet Kartu Pintar
+              <input id="a-SUMBER_PENDUDUK" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off" spellcheck="false">
+            </label>
+            <label>Nama sheet data penduduk
+              <input id="a-SHEET_PENDUDUK" placeholder="DATA_KK" autocomplete="off">
+            </label>
+          </div>
+          <p id="a-sumber-pesan" class="msg" role="status"></p>
+          <div class="baris-tombol">
+            <button id="a-sumber-simpan" class="btn btn-primary">Hubungkan &amp; Periksa</button>
+            <button id="a-segarkan" class="btn btn-ghost">Segarkan pilihan</button>
+          </div>
         </div>
 
         <div class="card">

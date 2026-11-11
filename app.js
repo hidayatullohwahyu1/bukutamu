@@ -3,7 +3,6 @@
  * Data disimpan dulu di tablet (antrean), lalu dikirim ke server — tidak ada data hilang saat sinyal putus. */
 'use strict';
 
-const XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BATAS_DIAM_MS = 60000;   // layar tamu kembali ke awal setelah 1 menit tanpa sentuhan
@@ -155,7 +154,7 @@ window.addEventListener('unhandledrejection', e => { console.error(e.reason); to
 
 /* ================= NAVIGASI ================= */
 
-const VIEW_PETUGAS = ['daftar', 'rekap', 'atur'];
+const VIEW_PETUGAS = ['daftar', 'atur'];
 
 function tampil(id) {
   if (id === 'manual') { S.mode = 'manual'; S.terisi = null; S.editData = null; id = 'form'; siapkanForm(null); }
@@ -168,8 +167,7 @@ function tampil(id) {
   if (dari !== id) window.scrollTo(0, 0);
   if (dari === 'terima' && id !== 'terima') clearTimeout(layarTerima._t);
   if (id === 'nik') resetNik();
-  if (id === 'daftar') muatDaftar();
-  if (id === 'rekap') muatRekap();
+  if (id === 'daftar') muatLaporan();
   if (id === 'atur') muatPengaturan();
   resetDiam();
 }
@@ -178,6 +176,7 @@ function aturPeran() {
   $$('[data-peran]').forEach(el => { el.hidden = el.dataset.peran === 'admin' ? !admin() : !petugas(); });
   document.body.classList.toggle('petugas', petugas());
   $('#btn-masuk').textContent = petugas() ? 'Keluar' : 'Admin';
+  aturTombolPasang();
 }
 
 document.addEventListener('click', e => {
@@ -238,8 +237,6 @@ function terapkanMaster() {
   buatChips('#c-keperluan', m.keperluan.map(labelPerlu));
   buatChips('#p-keperluan', m.keperluan.map(labelPerlu));
   buatChips('#c-rw', m.wilayah.map(w => [w.rw, 'RW ' + w.rw]));
-  $('#d-rw').innerHTML = '<option value="">Semua</option>' + m.wilayah.map(w => `<option value="${esc(w.rw)}">RW ${esc(w.rw)} – ${esc(judulKata(w.dusun))}</option>`).join('');
-  $('#d-keperluan').innerHTML = '<option value="">Semua</option>' + m.keperluan.map(k => `<option>${esc(k)}</option>`).join('');
 }
 
 /* ================= CHIPS ================= */
@@ -389,6 +386,7 @@ function tampilPilih() {
       ['Pekerjaan', judulKata(p.pekerjaan)]
     ];
   $('#p-info').innerHTML = info.map(([a, b]) => `<dt>${a}</dt><dd>${esc(b)}</dd>`).join('');
+  $('#p-catatan').hidden = !p.samar;
   pilihChip('#p-keperluan', '');
   $('#p-ket').value = '';
   pesan($('#p-salah'), '', 'err');
@@ -432,7 +430,7 @@ function siapkanForm(d) {
   $('#alamat-desa').hidden = false;
   $('#f-tanggal').value = isoHariIni();
   $('#form-judul').textContent = S.mode === 'ubah' ? `Ubah Data No. ${S.editData.no}` : (d ? 'Koreksi Data Tamu' : 'Isi Manual');
-  $('#form-simpan').textContent = S.mode === 'ubah' ? 'Simpan Perubahan' : 'Simpan';
+  tampilLangkah(1);
   if (!d) return;
   $('#f-nama').value = d.nama || '';
   $('#f-nik').value = d.nik || '';
@@ -482,7 +480,7 @@ function bersihSalah(el) {
   const s = $('small', el); if (s) s.textContent = '';
 }
 
-function validasiForm(d) {
+function validasiForm(d, hanya) {
   const salah = {};
   if (d.nama.length < 3) salah.nama = 'Nama minimal 3 huruf';
   if (d.nik && d.nik.length !== 16) salah.nik = 'NIK harus 16 angka, atau kosongkan';
@@ -496,24 +494,48 @@ function validasiForm(d) {
   if (d.rw !== '-') { if (!d.rw) salah.rw = 'Pilih RW'; else if (!d.rt) salah.rt = 'Pilih RT'; }
   if (!d.keterangan) salah.keperluan = 'Pilih keperluan atau tulis keterangan';
   else if (d.keperluan === 'LAINNYA' && d.keterangan === 'LAINNYA') salah.keterangan = 'Tulis keperluan Anda';
-  $$('#form-tamu [data-f]').forEach(bersihSalah);
+  if (hanya) Object.keys(salah).forEach(k => { if (!hanya.includes(k)) delete salah[k]; });
+  $$('#form-tamu [data-f]').forEach(el => { if (!hanya || hanya.includes(el.dataset.f)) bersihSalah(el); });
   Object.keys(salah).forEach(k => {
     const el = $(`#form-tamu [data-f="${k}"]`);
     if (el) { el.classList.add('salah'); $('small', el).textContent = salah[k]; }
   });
   const pertama = $('#form-tamu .salah');
   if (pertama) pertama.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  return !pertama;
+  return Object.keys(salah);
+}
+
+const FIELD_LANGKAH = {
+  1: ['nama', 'nik', 'lp', 'tempatLahir', 'tanggalLahir', 'agama', 'status', 'pekerjaan'],
+  2: ['rw', 'rt'],
+  3: ['keperluan', 'keterangan']
+};
+function tampilLangkah(n) {
+  S.langkah = n;
+  $$('#form-tamu fieldset[data-langkah]').forEach(fs => { fs.hidden = Number(fs.dataset.langkah) !== n; });
+  $$('#langkah-form li').forEach((li, i) => { li.classList.toggle('on', i + 1 === n); li.classList.toggle('selesai', i + 1 < n); });
+  $('#form-simpan').textContent = n < 3 ? 'Lanjut' : (S.mode === 'ubah' ? 'Simpan Perubahan' : 'Simpan');
+  $('#batal-btn').textContent = n > 1 ? 'Kembali' : 'Batal';
+  window.scrollTo(0, 0);
 }
 
 $('#f-luar').addEventListener('change', e => { $('#alamat-desa').hidden = e.target.checked; });
-$('#batal-btn').addEventListener('click', () => tampil(S.mode === 'ubah' ? 'daftar' : 'nik'));
+$('#batal-btn').addEventListener('click', () => { if (S.langkah > 1) tampilLangkah(S.langkah - 1); else tampil(S.mode === 'ubah' ? 'daftar' : 'nik'); });
 $('#form-tamu').addEventListener('input', e => bersihSalah(e.target.closest('[data-f]')));
 
 $('#form-tamu').addEventListener('submit', e => {
   e.preventDefault();
   const d = bacaForm();
-  if (!validasiForm(d)) return;
+  if (S.langkah < 3) {
+    if (!validasiForm(d, FIELD_LANGKAH[S.langkah]).length) tampilLangkah(S.langkah + 1);
+    return;
+  }
+  const salah = validasiForm(d);
+  if (salah.length) {
+    const ke = [1, 2, 3].find(n => FIELD_LANGKAH[n].some(f => salah.includes(f)));
+    if (ke !== 3) { tampilLangkah(ke); validasiForm(d, FIELD_LANGKAH[ke]); }
+    return;
+  }
   S._kirim = d;
   const baris = [
     ['Tanggal', dmyPanjang(d.tanggal)], ['Nama', d.nama], ['NIK', d.nik || '-'], ['Jenis kelamin', d.lp === 'P' ? 'Perempuan' : 'Laki-laki'],
@@ -678,56 +700,84 @@ function akhiriSesi() {
   if (VIEW_PETUGAS.includes(S.view)) tampil('nik');
 }
 
-/* ================= DAFTAR ================= */
+/* ================= LAPORAN (satu layar untuk admin) ================= */
 
-function aturPeriode(p) {
-  const now = new Date();
-  let dari = new Date(now);
-  if (p === 'minggu') dari.setDate(now.getDate() - 6);
-  if (p === 'bulan') dari = new Date(now.getFullYear(), now.getMonth(), 1);
-  if (p === 'tahun') dari = new Date(now.getFullYear(), 0, 1);
-  $('#d-dari').value = isoHariIni(dari);
-  $('#d-sampai').value = isoHariIni(now);
-  $$('#d-periode button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-}
-$('#d-periode').addEventListener('click', e => {
-  const b = e.target.closest('button');
-  if (b) { aturPeriode(b.dataset.p); muatDaftar(); }
-});
-['#d-dari', '#d-sampai'].forEach(s => $(s).addEventListener('change', () => $$('#d-periode button').forEach(b => b.classList.remove('on'))));
-$('#d-rw').addEventListener('change', () => {
-  const w = (S.master.wilayah || []).find(x => x.rw === $('#d-rw').value);
-  let h = '<option value="">Semua</option>';
-  if (w) for (let i = 1; i <= w.jumlahRt; i++) h += `<option value="${i}">RT ${i}</option>`;
-  $('#d-rt').innerHTML = h;
-});
-$('#d-tampil').addEventListener('click', () => muatDaftar());
-$('#d-q').addEventListener('keydown', e => { if (e.key === 'Enter') muatDaftar(); });
-
-const filterDaftar = () => ({
-  dari: $('#d-dari').value, sampai: $('#d-sampai').value, q: $('#d-q').value.trim(),
-  rw: $('#d-rw').value, rt: $('#d-rt').value, lp: $('#d-lp').value, keperluan: $('#d-keperluan').value
-});
+const labelKeperluan = k => judulKata(k).replace(/\bSktm\b/, 'SKTM').replace(/\bKtp\/Kk\b/i, 'KTP/KK');
 const KOLOM_L = ['NO', 'TANGGAL', 'NAMA', 'L/P', 'TEMPAT LAHIR', 'TANGGAL LAHIR', 'AGAMA', 'STATUS PERKAWINAN', 'PEKERJAAN', 'RT', 'RW', 'KETERANGAN'];
+const barisCetak = t => [t.no, t.tanggal, t.nama, t.lp, t.tempatLahir, t.tanggalLahir, t.agama, t.status, t.pekerjaan, t.rt, t.rw, t.keterangan];
+const urutKunci = t => dmyKeIso(t.tanggal) + String(t.no).padStart(6, '0');
 
-async function muatDaftar() {
-  if (!$('#d-dari').value) aturPeriode('hari');
-  const tb = $('#d-tabel tbody');
-  tb.innerHTML = '<tr><td colspan="13" class="kosong">Memuat…</td></tr>';
-  await sibuk($('#d-tampil'), async () => {
-    try {
-      const r = await api('daftar', { filter: filterDaftar() }, { ulang: 1 });
-      S.daftar = r.data;
-      $('#d-ringkas').textContent = `${r.total} tamu · Laki-laki ${r.L} · Perempuan ${r.P}`;
-      tb.innerHTML = r.data.length ? r.data.map((t, i) => {
-        const v = [t.no, t.tanggal, t.nama, t.lp, t.tempatLahir, t.tanggalLahir, t.agama, t.status, t.pekerjaan, t.rt, t.rw, t.keterangan];
-        return `<tr>${v.map((x, j) => `<td data-l="${KOLOM_L[j]}">${esc(x)}</td>`).join('')}
-          <td class="aksi"><button class="btn btn-ghost btn-sm" data-ubah="${i}">Ubah</button><button class="btn btn-danger btn-sm" data-hapus="${i}">Hapus</button></td></tr>`;
-      }).join('') : '<tr><td colspan="13" class="kosong">Belum ada tamu pada periode ini.</td></tr>';
-    } catch (e) {
-      tb.innerHTML = `<tr><td colspan="13" class="kosong">${esc(e.message)}</td></tr>`;
+(function () { const d = new Date(); $('#l-bulan').value = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; })();
+$('#l-bulan').addEventListener('change', () => muatLaporan());
+$('#d-q').addEventListener('input', () => renderDaftar());
+
+function infoBulan() {
+  const v = $('#l-bulan').value;
+  const m = v.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return null;
+  const tahun = Number(m[1]), bulan = Number(m[2]);
+  const akhir = new Date(tahun, bulan, 0).getDate();
+  return { v, tahun, bulan, akhir, nama: `${BULAN[bulan - 1]} ${tahun}`, dari: `${v}-01`, sampai: `${v}-${pad2(akhir)}` };
+}
+
+/** Hitung ringkasan dari daftar tamu (dipakai layar, Excel, dan cetak) */
+function hitungRekap(rows, b) {
+  // perHari berupa array (indeks 0 = tanggal 1) agar urutan tanggal selalu benar
+  const r = { total: rows.length, L: 0, P: 0, warga: 0, luar: 0, keperluan: {}, dusun: {}, umur: { 'Di bawah 17': 0, '17 - 25': 0, '26 - 40': 0, '41 - 60': 0, 'Di atas 60': 0 }, perHari: new Array(b.akhir).fill(0) };
+  rows.forEach(t => {
+    if (t.lp === 'L') r.L++; else if (t.lp === 'P') r.P++;
+    if (t.rw === '-') r.luar++; else r.warga++;
+    const kp = t.keperluan || 'LAINNYA';
+    r.keperluan[kp] = (r.keperluan[kp] || 0) + 1;
+    const ds = t.rw === '-' ? 'LUAR DESA' : (t.dusun || 'TIDAK DIKETAHUI');
+    r.dusun[ds] = (r.dusun[ds] || 0) + 1;
+    const hr = Number(String(t.tanggal).slice(0, 2));
+    if (hr >= 1 && hr <= b.akhir) r.perHari[hr - 1]++;
+    const a = dmyKeIso(t.tanggalLahir), k = dmyKeIso(t.tanggal);
+    if (a && k) {
+      const u = Math.floor((Number(k.replace(/-/g, '')) - Number(a.replace(/-/g, ''))) / 10000);
+      r.umur[u < 17 ? 'Di bawah 17' : u <= 25 ? '17 - 25' : u <= 40 ? '26 - 40' : u <= 60 ? '41 - 60' : 'Di atas 60']++;
     }
   });
+  return r;
+}
+
+async function muatLaporan() {
+  const b = infoBulan();
+  if (!b) return;
+  const tb = $('#d-tabel tbody');
+  tb.innerHTML = '<tr><td colspan="13" class="kosong">Memuat…</td></tr>';
+  $('#l-kpi').innerHTML = '';
+  try {
+    const r = await api('daftar', { filter: { dari: b.dari, sampai: b.sampai, batas: 100000 } }, { ulang: 1, timeout: 60000 });
+    S.bulan = { info: b, rows: r.data.slice().sort((x, y) => urutKunci(y).localeCompare(urutKunci(x))) };
+    const rk = hitungRekap(S.bulan.rows, b);
+    const hariIni = isoKeDmy(isoHariIni());
+    const jmlHariIni = S.bulan.rows.filter(t => t.tanggal === hariIni).length;
+    const kpTeratas = Object.keys(rk.keperluan).sort((x, y) => rk.keperluan[y] - rk.keperluan[x])[0];
+    $('#l-kpi').innerHTML = `
+      <div><b>${rk.total}</b><span>Tamu ${esc(b.nama)}</span></div>
+      <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki / Perempuan</span></div>
+      <div><b>${jmlHariIni}</b><span>Tamu hari ini</span></div>
+      <div><b class="kecil">${esc(kpTeratas ? labelKeperluan(kpTeratas) : '-')}</b><span>Keperluan terbanyak</span></div>`;
+    renderDaftar();
+  } catch (e) {
+    S.bulan = null;
+    tb.innerHTML = `<tr><td colspan="13" class="kosong">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderDaftar() {
+  const tb = $('#d-tabel tbody');
+  if (!S.bulan) return;
+  const q = $('#d-q').value.trim().toUpperCase();
+  S.daftar = S.bulan.rows.filter(t => !q || `${t.nama} ${t.keterangan} ${t.nik} ${t.dusun}`.toUpperCase().includes(q));
+  $('#d-ringkas').textContent = q ? `${S.daftar.length} dari ${S.bulan.rows.length} tamu cocok dengan "${$('#d-q').value.trim()}"` : `Daftar tamu ${S.bulan.info.nama} (terbaru di atas)`;
+  tb.innerHTML = S.daftar.length ? S.daftar.map((t, i) => {
+    const v = barisCetak(t);
+    return `<tr>${v.map((x, j) => `<td data-l="${KOLOM_L[j]}">${esc(x)}</td>`).join('')}
+      <td class="aksi"><button class="btn btn-ghost btn-sm" data-ubah="${i}">Ubah</button><button class="btn btn-danger btn-sm" data-hapus="${i}">Hapus</button></td></tr>`;
+  }).join('') : `<tr><td colspan="13" class="kosong">${q ? 'Tidak ada yang cocok.' : 'Belum ada tamu pada bulan ini.'}</td></tr>`;
 }
 
 $('#d-tabel').addEventListener('click', async e => {
@@ -742,126 +792,174 @@ $('#d-tabel').addEventListener('click', async e => {
     const t = S.daftar[Number(h.dataset.hapus)];
     const alasan = prompt(`Hapus data ${t.nama} (No. ${t.no})?\nTulis alasan penghapusan:`);
     if (alasan === null) return;
-    try { await api('hapus', { id: t.id, alasan }); toast('Data dihapus.'); muatDaftar(); } catch (err) { toast(err.message, true); }
+    try { await api('hapus', { id: t.id, alasan }); toast('Data dihapus.'); muatLaporan(); } catch (err) { toast(err.message, true); }
   }
 });
 
-/* ---------- Excel & cetak ---------- */
+/* ---------- Excel lengkap (ExcelJS) ---------- */
 
-function muatSkrip(url) {
+const EXCELJS_URL = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+function muatSkrip(url, nama) {
   return new Promise((ok, gagal) => {
-    if (window.XLSX) return ok();
+    if (window[nama]) return ok();
     const s = document.createElement('script');
     s.src = url; s.onload = ok; s.onerror = () => gagal(new Error('Gagal memuat pustaka Excel. Periksa internet.'));
     document.head.appendChild(s);
   });
 }
-const barisCetak = t => [t.no, t.tanggal, t.nama, t.lp, t.tempatLahir, t.tanggalLahir, t.agama, t.status, t.pekerjaan, t.rt, t.rw, t.keterangan];
-function labelPeriode() {
-  const f = filterDaftar();
-  const a = isoKeDmy(f.dari), b = isoKeDmy(f.sampai);
-  return a && b ? (a === b ? a : `${a} s.d. ${b}`) : 'Semua tanggal';
+const keTanggal = dmy => { const m = String(dmy || '').match(/^(\d{2})-(\d{2})-(\d{4})$/); return m ? new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])) : (dmy || ''); };
+const keAngka = v => /^\d+$/.test(String(v)) ? Number(v) : (v || '');
+
+function tanggalTtd(b) {
+  const now = new Date();
+  const akhirBulan = new Date(b.tahun, b.bulan - 1, b.akhir);
+  const d = now < akhirBulan ? now : akhirBulan;
+  return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-async function unduhExcel(rows, judulPeriode, namaFile) {
-  await muatSkrip(XLSX_URL);
-  const kunci = t => dmyKeIso(t.tanggal) + String(t.no).padStart(6, '0');
-  const urut = rows.slice().sort((a, b) => kunci(a).localeCompare(kunci(b)));
-  const aoa = [['BUKU TAMU DESA ' + (S.master.desa.nama || 'MERDEN').toUpperCase()], [judulPeriode], [], KOLOM_L].concat(urut.map(barisCetak));
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [6, 12, 28, 5, 16, 14, 12, 18, 24, 5, 5, 40].map(w => ({ wch: w }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Buku Tamu');
-  XLSX.writeFile(wb, namaFile);
+async function buatExcel(rows, b) {
+  await muatSkrip(EXCELJS_URL, 'ExcelJS');
+  const desa = S.master.desa;
+  const namaDesa = (desa.nama || 'Merden');
+  const urut = rows.slice().sort((x, y) => urutKunci(x).localeCompare(urutKunci(y)));
+  const rk = hitungRekap(urut, b);
+  const HIJAU = 'FF14703A', HIJAU_MUDA = 'FFE6F3EA', ABU = 'FFF4F6F5';
+  const tipis = { style: 'thin', color: { argb: 'FF9AA5A0' } };
+  const garis = { top: tipis, left: tipis, bottom: tipis, right: tipis };
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Buku Tamu Desa ' + namaDesa;
+  wb.created = new Date();
+
+  /* ----- Sheet 1: Buku Tamu ----- */
+  const ws = wb.addWorksheet('Buku Tamu', {
+    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
+      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 } },
+    headerFooter: { oddFooter: `&L&8Buku Tamu Desa ${namaDesa} - ${b.nama}&R&8Halaman &P dari &N` },
+    views: [{ state: 'frozen', ySplit: 7 }]
+  });
+  ws.columns = [5, 12, 30, 5, 17, 13, 12, 21, 26, 5, 5, 42].map(w => ({ width: w }));
+  const kop = [
+    [`PEMERINTAH KABUPATEN ${(desa.kabupaten || '').toUpperCase()}`, 12, false],
+    [`KECAMATAN ${(desa.kecamatan || '').toUpperCase()}`, 12, false],
+    [`DESA ${namaDesa.toUpperCase()}`, 15, true]
+  ];
+  kop.forEach(([teks, uk, besar], i) => {
+    ws.mergeCells(i + 1, 1, i + 1, 12);
+    const c = ws.getCell(i + 1, 1);
+    c.value = teks; c.font = { bold: true, size: uk }; c.alignment = { horizontal: 'center' };
+    if (besar) for (let k = 1; k <= 12; k++) ws.getCell(i + 1, k).border = { bottom: { style: 'double' } };
+  });
+  ws.mergeCells(5, 1, 5, 12);
+  Object.assign(ws.getCell(5, 1), { value: `BUKU TAMU BULAN ${b.nama.toUpperCase()}` });
+  ws.getCell(5, 1).font = { bold: true, size: 13 }; ws.getCell(5, 1).alignment = { horizontal: 'center' };
+  ws.mergeCells(6, 1, 6, 12);
+  ws.getCell(6, 1).value = `Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P}) — warga desa ${rk.warga}, luar desa ${rk.luar}`;
+  ws.getCell(6, 1).font = { italic: true, size: 10 }; ws.getCell(6, 1).alignment = { horizontal: 'center' };
+
+  const kepala = ws.getRow(7);
+  kepala.values = KOLOM_L;
+  kepala.height = 30;
+  kepala.eachCell(c => {
+    c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU } };
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    c.border = garis;
+  });
+  urut.forEach((t, i) => {
+    const row = ws.addRow([keAngka(t.no), keTanggal(t.tanggal), t.nama, t.lp, t.tempatLahir, keTanggal(t.tanggalLahir),
+      t.agama, t.status, t.pekerjaan, keAngka(t.rt), keAngka(t.rw), t.keterangan]);
+    row.eachCell({ includeEmpty: true }, (c, col) => {
+      c.border = garis;
+      c.alignment = { vertical: 'top', wrapText: col === 3 || col === 9 || col === 12, horizontal: [1, 2, 4, 6, 10, 11].includes(col) ? 'center' : 'left' };
+      if (i % 2 === 1) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ABU } };
+    });
+    row.getCell(2).numFmt = 'dd-mm-yyyy';
+    row.getCell(6).numFmt = 'dd-mm-yyyy';
+  });
+  if (urut.length) ws.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7 + urut.length, column: 12 } };
+  ws.pageSetup.printTitlesRow = '7:7';
+
+  // tanda tangan Kepala Desa
+  const t0 = 7 + urut.length + 2;
+  [`${namaDesa}, ${tanggalTtd(b)}`, `Kepala Desa ${namaDesa}`, '', '', '', desa.kades || '( ................................ )'].forEach((teks, i) => {
+    ws.mergeCells(t0 + i, 9, t0 + i, 12);
+    const c = ws.getCell(t0 + i, 9);
+    c.value = teks; c.alignment = { horizontal: 'center' };
+    if (i === 5) c.font = { bold: true, underline: !!desa.kades };
+  });
+
+  /* ----- Sheet 2: Rekap ----- */
+  const wr = wb.addWorksheet('Rekap', { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  wr.columns = [{ width: 34 }, { width: 12 }, { width: 12 }];
+  wr.mergeCells('A1:C1'); wr.getCell('A1').value = `REKAP BUKU TAMU DESA ${namaDesa.toUpperCase()}`;
+  wr.getCell('A1').font = { bold: true, size: 13 }; wr.getCell('A1').alignment = { horizontal: 'center' };
+  wr.mergeCells('A2:C2'); wr.getCell('A2').value = `Bulan ${b.nama}`; wr.getCell('A2').alignment = { horizontal: 'center' };
+  let baris = 4;
+  const tabel = (judul, pasangan, denganPersen = true) => {
+    const h = wr.getRow(baris);
+    h.values = [judul, 'Jumlah', denganPersen ? 'Persen' : ''];
+    h.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU } }; c.border = garis; });
+    baris++;
+    pasangan.forEach(([k, v], i) => {
+      const r = wr.getRow(baris++);
+      r.values = [k, v, denganPersen && rk.total ? v / rk.total : ''];
+      r.getCell(3).numFmt = '0.0%';
+      r.eachCell({ includeEmpty: true }, c => { c.border = garis; if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU_MUDA } }; });
+      r.getCell(2).alignment = { horizontal: 'center' };
+    });
+    baris++;
+  };
+  const urutObj = o => Object.keys(o).filter(k => o[k] > 0).sort((x, y) => o[y] - o[x]).map(k => [labelKeperluan(k), o[k]]);
+  tabel('Ringkasan', [['Total tamu', rk.total], ['Laki-laki', rk.L], ['Perempuan', rk.P], ['Warga Desa ' + namaDesa, rk.warga], ['Dari luar desa', rk.luar]]);
+  tabel('Keperluan', urutObj(rk.keperluan));
+  tabel('Dusun', urutObj(rk.dusun));
+  tabel('Kelompok umur', Object.keys(rk.umur).map(k => [k, rk.umur[k]]));
+  tabel('Tamu per tanggal', rk.perHari.map((n, i) => [`${i + 1} ${b.nama}`, n]), false);
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Buku_Tamu_${namaDesa}_${b.nama.replace(' ', '_')}.xlsx`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return rk;
 }
 
-$('#d-excel').addEventListener('click', () => sibuk($('#d-excel'), async () => {
-  if (!S.daftar.length) { toast('Tidak ada data untuk diunduh.', true); return; }
-  try { await unduhExcel(S.daftar, 'Periode: ' + labelPeriode(), `Buku_Tamu_${labelPeriode().replace(/[^\w-]+/g, '_')}.xlsx`); }
-  catch (e) { toast(e.message, true); }
-}));
-
-/* ---------- laporan bulanan (satu tombol) ---------- */
-(function () { const d = new Date(); $('#l-bulan').value = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; })();
 $('#l-unduh').addEventListener('click', () => sibuk($('#l-unduh'), async () => {
-  const v = $('#l-bulan').value;
-  const m = v.match(/^(\d{4})-(\d{2})$/);
-  if (!m) { toast('Pilih bulan dulu.', true); return; }
-  const akhir = new Date(Number(m[1]), Number(m[2]), 0).getDate();
-  const namaBulan = `${BULAN[Number(m[2]) - 1]} ${m[1]}`;
+  const b = infoBulan();
+  if (!b) { toast('Pilih bulan dulu.', true); return; }
   try {
-    const r = await api('daftar', { filter: { dari: `${v}-01`, sampai: `${v}-${pad2(akhir)}`, batas: 100000 } }, { ulang: 1, timeout: 60000 });
-    if (!r.data.length) { toast(`Belum ada tamu pada ${namaBulan}.`, true); return; }
-    await unduhExcel(r.data, `Bulan: ${namaBulan} - ${r.total} tamu (L ${r.L}, P ${r.P})`, `Buku_Tamu_${namaBulan.replace(' ', '_')}.xlsx`);
-    toast(`Laporan ${namaBulan} diunduh (${r.total} tamu).`);
+    if (!S.bulan || S.bulan.info.v !== b.v) await muatLaporan();
+    if (!S.bulan || !S.bulan.rows.length) { toast(`Belum ada tamu pada ${b.nama}.`, true); return; }
+    const rk = await buatExcel(S.bulan.rows, b);
+    toast(`Excel ${b.nama} diunduh (${rk.total} tamu).`);
   } catch (e) { toast(e.message, true); }
 }));
 
-$('#d-cetak').addEventListener('click', () => {
-  if (!S.daftar.length) { toast('Tidak ada data untuk dicetak.', true); return; }
-  const d = S.master.desa;
-  const now = new Date();
+$('#l-cetak').addEventListener('click', () => {
+  if (!S.bulan || !S.bulan.rows.length) { toast('Belum ada tamu pada bulan ini.', true); return; }
+  const d = S.master.desa, b = S.bulan.info;
+  const urut = S.bulan.rows.slice().sort((x, y) => urutKunci(x).localeCompare(urutKunci(y)));
+  const rk = hitungRekap(urut, b);
   $('#cetak').innerHTML = `
     <div class="kop">
       <div>PEMERINTAH KABUPATEN ${esc((d.kabupaten || '').toUpperCase())}</div>
       <div>KECAMATAN ${esc((d.kecamatan || '').toUpperCase())}</div>
       <div class="besar">DESA ${esc((d.nama || 'MERDEN').toUpperCase())}</div>
     </div>
-    <h3>BUKU TAMU</h3>
-    <p style="text-align:center;margin:0 0 8px">Periode: ${esc(labelPeriode())}</p>
+    <h3>BUKU TAMU BULAN ${esc(b.nama.toUpperCase())}</h3>
+    <p style="text-align:center;margin:0 0 8px">Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P})</p>
     <table><thead><tr>${KOLOM_L.map(k => `<th>${k}</th>`).join('')}</tr></thead>
-    <tbody>${S.daftar.slice().reverse().map(t => `<tr>${barisCetak(t).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <tbody>${urut.map(t => `<tr>${barisCetak(t).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
     <div class="ttd">
-      <div>${esc(d.nama || 'Merden')}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}</div>
+      <div>${esc(d.nama || 'Merden')}, ${tanggalTtd(b)}</div>
       <div>Kepala Desa ${esc(d.nama || 'Merden')}</div>
       <div class="nama">${esc(d.kades || '....................................')}</div>
     </div>`;
   window.print();
 });
-
-/* ================= REKAP ================= */
-
-(function () {
-  const y = new Date().getFullYear();
-  $('#r-tahun').innerHTML = [0, 1, 2, 3, 4].map(i => `<option>${y - i}</option>`).join('');
-  $('#r-bulan').value = String(new Date().getMonth() + 1);
-})();
-['#r-tahun', '#r-bulan'].forEach(s => $(s).addEventListener('change', muatRekap));
-
-function tabelMini(judul, obj) {
-  const rows = Object.keys(obj).filter(k => obj[k] > 0).sort((a, b) => obj[b] - obj[a]);
-  return `<div class="card"><h2>${judul}</h2><table class="mini">${rows.length ? rows.map(k => `<tr><td>${esc(judulKata(k))}</td><td>${obj[k]}</td></tr>`).join('') : '<tr><td class="muted">Belum ada data</td><td></td></tr>'}</table></div>`;
-}
-
-async function muatRekap() {
-  const isi = $('#r-isi');
-  isi.innerHTML = '<p class="muted">Memuat…</p>';
-  try {
-    const r = await api('rekap', { tahun: $('#r-tahun').value, bulan: $('#r-bulan').value }, { ulang: 1 });
-    const per = r.perPeriode;
-    const maks = Math.max(1, ...Object.values(per));
-    const label = k => r.bulan ? String(Number(k)) : BULAN[Number(k) - 1].slice(0, 3);
-    isi.innerHTML = `
-      <div class="kpi">
-        <div><b>${r.hariIni}</b><span>Tamu hari ini</span></div>
-        <div><b>${r.total}</b><span>Total ${r.bulan ? BULAN[Number(r.bulan) - 1] + ' ' : ''}${r.tahun}</span></div>
-        <div><b>${r.L}</b><span>Laki-laki</span></div>
-        <div><b>${r.P}</b><span>Perempuan</span></div>
-      </div>
-      <div class="card"><h2>Tamu per ${r.bulan ? 'hari' : 'bulan'}</h2>
-        <div class="bars">${Object.keys(per).map(k => `<div class="bar"><em>${per[k] || ''}</em><i style="height:${per[k] / maks * 100}%"></i>${label(k)}</div>`).join('')}</div>
-      </div>
-      <div class="dua-kolom">
-        ${tabelMini('Keperluan', r.keperluan)}
-        ${tabelMini('Dusun', r.dusun)}
-        ${tabelMini('RW', r.rw)}
-        ${tabelMini('Kelompok umur', r.umur)}
-        ${tabelMini('Sumber data', r.sumber)}
-      </div>`;
-  } catch (e) {
-    isi.innerHTML = `<p class="msg err">${esc(e.message)}</p>`;
-  }
-}
 
 /* ================= PENGATURAN ================= */
 
@@ -888,7 +986,7 @@ $('#a-pin-simpan').addEventListener('click', () => sibuk($('#a-pin-simpan'), asy
   const pin = $('#a-pin').value;
   if (!/^\d{6}$/.test(pin)) { pesan($('#a-pin-pesan'), 'PIN harus 6 angka.', 'err'); return; }
   try {
-    await api('gantiPin', { untuk: $('#a-pin-untuk').value, pinBaru: pin });
+    await api('gantiPin', { untuk: 'admin', pinBaru: pin });
     $('#a-pin').value = '';
     pesan($('#a-pin-pesan'), 'PIN berhasil diganti.', 'ok');
   } catch (e) { pesan($('#a-pin-pesan'), e.message, 'err'); }
@@ -950,7 +1048,11 @@ function mulai() {
 
 let _promptPasang = null;
 const sudahTerpasang = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-function aturTombolPasang() { $('#btn-pasang').hidden = sudahTerpasang(); }
+function aturTombolPasang() {
+  const bisa = !sudahTerpasang();
+  $('#btn-pasang').hidden = !(bisa && petugas());
+  $('#a-pasang-kartu').hidden = !bisa;
+}
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();            // tahan banner bawaan; pakai tombol "Pasang" sendiri
@@ -962,7 +1064,7 @@ window.addEventListener('appinstalled', () => {
   $('#btn-pasang').hidden = true;
   toast('Aplikasi terpasang. Buka dari ikon Buku Tamu di layar HP.');
 });
-$('#btn-pasang').addEventListener('click', async () => {
+async function mulaiPasang() {
   if (_promptPasang) {
     _promptPasang.prompt();
     const pilihan = await _promptPasang.userChoice.catch(() => null);
@@ -977,7 +1079,9 @@ $('#btn-pasang').addEventListener('click', async () => {
     ? 'Anda membuka dari dalam aplikasi lain. Salin alamat ini lalu buka di Google Chrome agar bisa dipasang.'
     : 'Ikuti langkah sesuai jenis HP Anda:';
   $('#dlg-pasang').showModal();
-});
+}
+$('#btn-pasang').addEventListener('click', mulaiPasang);
+$('#a-pasang').addEventListener('click', mulaiPasang);
 $('#pasang-tutup').addEventListener('click', () => $('#dlg-pasang').close());
 window.matchMedia('(display-mode: standalone)').addEventListener('change', aturTombolPasang);
 aturTombolPasang();

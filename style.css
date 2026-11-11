@@ -315,6 +315,53 @@ dialog::backdrop { background: rgba(10, 25, 15, .5); }
   .tabel td.aksi::before, .tabel td.kosong::before { content: none; }
 }
 
+/* ================= ALUR LEBIH JELAS ================= */
+.kecil { font-size: .82rem; }
+.catatan-samar { background: #FFF8E1; color: #5C4600; border-radius: 10px; padding: 10px 12px; font-size: .88rem; margin: -4px 0 14px; }
+
+/* isi manual: penunjuk langkah */
+.langkah-form { list-style: none; display: flex; gap: 8px; padding: 0; margin: 0 0 12px; }
+.langkah-form li { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #fff; color: var(--teks-2); font-weight: 600; font-size: .9rem; box-shadow: var(--bayang); }
+.langkah-form b { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--garis); font-size: .85rem; }
+.langkah-form li.on { color: var(--hijau-tua); outline: 2px solid var(--hijau); }
+.langkah-form li.on b { background: var(--hijau); border-color: var(--hijau); color: #fff; }
+.langkah-form li.selesai b { background: var(--hijau-muda); border-color: var(--hijau); color: var(--hijau); }
+#form-tamu fieldset { margin-bottom: 8px; }
+
+/* laporan */
+.laporan { display: grid; gap: 14px; }
+.bulan-pilih { max-width: 320px; font-size: .95rem; }
+.laporan .kpi { margin: 0; }
+.kpi div { background: var(--latar); box-shadow: none; }
+.kpi b.kecil { font-size: 1.05rem; line-height: 1.3; padding-top: 6px; }
+.aksi-laporan { display: flex; gap: 10px; flex-wrap: wrap; order: 2; }
+.laporan .bulan-pilih { order: 1; }
+.laporan .kpi { order: 3; }
+.laporan > p { order: 4; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .laporan { grid-template-columns: auto 1fr; align-items: end; }
+  .laporan .kpi, .laporan > p { grid-column: 1 / -1; }
+  .laporan .kpi { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kepala h1 { font-size: 1.2rem; }
+}
+@media (max-width: 400px) { .aksi-laporan .btn { flex-basis: 120px; min-height: 52px; font-size: .95rem; padding: 8px 12px; } }
+.aksi-laporan .btn { flex: 1 1 200px; }
+.aksi-laporan svg { width: 20px; height: 20px; }
+.cari-daftar { margin: 4px 0 6px; }
+.cari-daftar input { background: #fff; }
+
+/* atur: bagian teknis disembunyikan */
+.lanjutan summary { cursor: pointer; font-weight: 700; color: var(--teks-2); padding: 4px 0; }
+.lanjutan[open] summary { margin-bottom: 14px; }
+.lanjutan h2 { margin-top: 18px; font-size: 1rem; }
+.lanjutan label { margin-bottom: 10px; }
+
+@media (max-width: 640px) {
+  .langkah-form li { flex-direction: column; gap: 4px; padding: 8px 4px; font-size: .74rem; text-align: center; }
+  .kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi b { font-size: 1.5rem; }
+}
+
 /* ================= PERBAIKAN TAMPILAN (layar kecil, HP miring, dialog) ================= */
 
 /* NIK 16 angka selalu muat di kotaknya */

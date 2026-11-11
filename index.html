@@ -23,8 +23,7 @@
     </button>
     <nav class="nav" id="nav" data-peran="petugas" aria-label="Menu petugas">
       <button data-go="nik"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0"/></svg><span>Tamu</span></button>
-      <button data-go="daftar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Daftar</span></button>
-      <button data-go="rekap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Rekap</span></button>
+      <button data-go="daftar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Laporan</span></button>
       <button data-go="atur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span>Atur</span></button>
     </nav>
     <div class="status">
@@ -86,6 +85,7 @@
           <p class="muted">Apakah ini Anda?</p>
           <h2 class="orang-nama" id="p-nama"></h2>
           <dl class="orang-info" id="p-info"></dl>
+          <p class="catatan-samar" id="p-catatan" hidden>Nama sengaja disamarkan untuk menjaga privasi. Cukup pastikan huruf depan dan RT/RW sesuai dengan Anda.</p>
           <div class="baris-tombol">
             <button class="btn btn-ghost btn-sm" id="p-bukan">Bukan saya</button>
             <button class="btn btn-ghost btn-sm" id="p-koreksi" data-peran="petugas">Koreksi data</button>
@@ -109,9 +109,14 @@
         <h1 id="form-judul">Isi Manual</h1>
         <label class="inline" id="tgl-wrap" data-peran="petugas">Tanggal <input type="date" id="f-tanggal"></label>
       </div>
+      <ol class="langkah-form" id="langkah-form" aria-label="Langkah isi manual">
+        <li class="on"><b>1</b><span>Data diri</span></li>
+        <li><b>2</b><span>Alamat</span></li>
+        <li><b>3</b><span>Keperluan</span></li>
+      </ol>
       <form id="form-tamu" class="card" novalidate>
-        <fieldset>
-          <legend>Data diri</legend>
+        <fieldset data-langkah="1">
+          <legend>Langkah 1 dari 3 — Data diri</legend>
           <div class="grid">
             <label class="span2" data-f="nama">Nama lengkap
               <input id="f-nama" type="text" maxlength="100" autocomplete="off" class="upper" enterkeyhint="next">
@@ -145,8 +150,8 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Alamat</legend>
+        <fieldset data-langkah="2" hidden>
+          <legend>Langkah 2 dari 3 — Alamat</legend>
           <label class="check"><input type="checkbox" id="f-luar"> Saya dari luar Desa Merden</label>
           <div id="alamat-desa" class="grid">
             <div class="field span2" data-f="rw">RW <span id="f-dusun" class="muted"></span>
@@ -158,8 +163,8 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Keperluan</legend>
+        <fieldset data-langkah="3" hidden>
+          <legend>Langkah 3 dari 3 — Keperluan</legend>
           <div class="field" data-f="keperluan">
             <div class="chips" id="c-keperluan"></div><small></small>
           </div>
@@ -188,45 +193,26 @@
       </div>
     </section>
 
-    <!-- DAFTAR -->
+    <!-- LAPORAN (admin) -->
     <section id="v-daftar" class="view" hidden>
+      <div class="kepala"><h1>Laporan Buku Tamu</h1></div>
       <div class="card laporan">
-        <h2>Laporan bulanan</h2>
-        <p class="muted">Pilih bulan, lalu unduh buku tamu bulan itu dalam format Excel.</p>
-        <div class="filter-cari">
-          <input type="month" id="l-bulan" aria-label="Bulan laporan">
-          <button id="l-unduh" class="btn btn-primary btn-lg">Unduh Excel</button>
+        <label class="bulan-pilih">Pilih bulan
+          <input type="month" id="l-bulan">
+        </label>
+        <div class="kpi" id="l-kpi"></div>
+        <div class="aksi-laporan">
+          <button id="l-unduh" class="btn btn-primary btn-lg">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Unduh Excel
+          </button>
+          <button id="l-cetak" class="btn btn-ghost btn-lg">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>Cetak / PDF
+          </button>
         </div>
+        <p class="muted kecil">File Excel berisi kop desa, daftar tamu lengkap, tanda tangan Kepala Desa, dan sheet <b>Rekap</b> (jumlah per keperluan, dusun, umur, tanggal).</p>
       </div>
-      <div class="kepala">
-        <h1>Daftar Tamu</h1>
-        <div class="baris-tombol">
-          <button id="d-excel" class="btn btn-ghost btn-sm">Unduh Excel</button>
-          <button id="d-cetak" class="btn btn-ghost btn-sm">Cetak / PDF</button>
-        </div>
-      </div>
-      <div class="card filter">
-        <div class="chips periode" id="d-periode">
-          <button type="button" data-p="hari" class="on">Hari ini</button>
-          <button type="button" data-p="minggu">7 hari</button>
-          <button type="button" data-p="bulan">Bulan ini</button>
-          <button type="button" data-p="tahun">Tahun ini</button>
-        </div>
-        <div class="filter-cari">
-          <input type="search" id="d-q" placeholder="Cari nama, NIK, keterangan">
-          <button id="d-tampil" class="btn btn-primary">Tampilkan</button>
-        </div>
-        <details class="filter-lain">
-          <summary>Filter lainnya</summary>
-          <div class="filter-grid">
-            <label>Dari <input type="date" id="d-dari"></label>
-            <label>Sampai <input type="date" id="d-sampai"></label>
-            <label>RW <select id="d-rw"><option value="">Semua</option></select></label>
-            <label>RT <select id="d-rt"><option value="">Semua</option></select></label>
-            <label>L/P <select id="d-lp"><option value="">Semua</option><option>L</option><option>P</option></select></label>
-            <label>Keperluan <select id="d-keperluan"><option value="">Semua</option></select></label>
-          </div>
-        </details>
+      <div class="cari-daftar">
+        <input type="search" id="d-q" placeholder="Cari nama atau keperluan di bulan ini…" aria-label="Cari tamu">
       </div>
       <p id="d-ringkas" class="ringkas"></p>
       <div class="table-wrap">
@@ -240,80 +226,69 @@
       </div>
     </section>
 
-    <!-- REKAP -->
-    <section id="v-rekap" class="view" hidden>
-      <div class="kepala">
-        <h1>Rekap Kunjungan</h1>
-        <div class="baris-tombol">
-          <select id="r-tahun" aria-label="Tahun"></select>
-          <select id="r-bulan" aria-label="Bulan">
-            <option value="">Setahun</option>
-            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
-            <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-            <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-          </select>
-        </div>
-      </div>
-      <div id="r-isi"></div>
-    </section>
-
-    <!-- PENGATURAN -->
+    <!-- ATUR (admin) -->
     <section id="v-atur" class="view" hidden>
-      <h1>Pengaturan</h1>
-      <div class="card">
-        <h2>Data menunggu kirim</h2>
-        <p id="a-antrean" class="muted"></p>
-        <button id="a-kirim" class="btn btn-primary">Kirim Sekarang</button>
-        <div id="a-antrean-list" class="hasil"></div>
-      </div>
-
+      <h1>Atur</h1>
       <div data-peran="admin">
         <div class="card">
-          <h2>Sumber Data Penduduk (Kartu Pintar)</h2>
-          <p class="muted">Data penduduk dibaca langsung dari spreadsheet database Kartu Pintar, jadi selalu terbaru tanpa impor ulang.</p>
-          <p class="muted" id="a-sumber-info"></p>
+          <h2>Identitas desa</h2>
+          <p class="muted">Dipakai di kop dan tanda tangan laporan Excel / cetak.</p>
           <div class="grid">
-            <label class="span2">Alamat spreadsheet Kartu Pintar
-              <input id="a-SUMBER_PENDUDUK" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off" spellcheck="false">
-            </label>
-            <label>Nama sheet data penduduk
-              <input id="a-SHEET_PENDUDUK" placeholder="DATA_KK" autocomplete="off">
-            </label>
-          </div>
-          <p id="a-sumber-pesan" class="msg" role="status"></p>
-          <div class="baris-tombol">
-            <button id="a-sumber-simpan" class="btn btn-primary">Hubungkan &amp; Periksa</button>
-            <button id="a-segarkan" class="btn btn-ghost">Segarkan pilihan</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Identitas Desa</h2>
-          <div class="grid">
+            <label>Nama Kepala Desa <input id="a-NAMA_KADES" placeholder="Nama lengkap Kepala Desa"></label>
             <label>Nama desa <input id="a-NAMA_DESA"></label>
             <label>Kecamatan <input id="a-KECAMATAN"></label>
             <label>Kabupaten <input id="a-KABUPATEN"></label>
-            <label>Nama Kepala Desa <input id="a-NAMA_KADES"></label>
-            <label>Nomor urut diulang tiap
-              <select id="a-RESET_NO"><option value="TAHUN">Tahun</option><option value="BULAN">Bulan</option><option value="HARI">Hari</option></select>
-            </label>
           </div>
           <p id="a-desa-pesan" class="msg" role="status"></p>
           <button id="a-desa-simpan" class="btn btn-primary">Simpan</button>
         </div>
 
         <div class="card">
-          <h2>Ganti PIN</h2>
-          <div class="grid">
-            <label>Untuk <select id="a-pin-untuk"><option value="petugas">Petugas</option><option value="admin">Admin</option></select></label>
-            <label>PIN baru (6 angka) <input id="a-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></label>
-          </div>
+          <h2>Ganti PIN admin</h2>
+          <p class="muted">PIN ini dipakai untuk tombol Admin. Ganti PIN awal agar data tamu aman.</p>
+          <label>PIN baru (6 angka)
+            <input id="a-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password">
+          </label>
           <p id="a-pin-pesan" class="msg" role="status"></p>
           <button id="a-pin-simpan" class="btn btn-primary">Ganti PIN</button>
         </div>
-
       </div>
+
+      <div class="card" id="a-pasang-kartu" hidden>
+        <h2>Pasang aplikasi di perangkat ini</h2>
+        <p class="muted">Membuat ikon Buku Tamu di layar HP/tablet, terbuka layar penuh seperti aplikasi biasa.</p>
+        <button id="a-pasang" class="btn btn-primary">Pasang aplikasi</button>
+      </div>
+
+      <details class="card lanjutan">
+        <summary>Pengaturan lanjutan (teknis)</summary>
+        <h2>Data yang belum terkirim</h2>
+        <p id="a-antrean" class="muted"></p>
+        <button id="a-kirim" class="btn btn-ghost">Kirim sekarang</button>
+        <div id="a-antrean-list" class="hasil"></div>
+
+        <div data-peran="admin">
+          <h2>Nomor urut tamu</h2>
+          <label>Diulang dari 1 setiap
+            <select id="a-RESET_NO"><option value="TAHUN">Tahun</option><option value="BULAN">Bulan</option><option value="HARI">Hari</option></select>
+          </label>
+          <p class="muted kecil">Tersimpan bersama tombol Simpan pada Identitas desa.</p>
+
+          <h2>Sumber data penduduk (Kartu Pintar)</h2>
+          <p class="muted" id="a-sumber-info"></p>
+          <label>Alamat spreadsheet Kartu Pintar
+            <input id="a-SUMBER_PENDUDUK" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off" spellcheck="false">
+          </label>
+          <label>Nama sheet data penduduk
+            <input id="a-SHEET_PENDUDUK" placeholder="DATA_KK" autocomplete="off">
+          </label>
+          <p id="a-sumber-pesan" class="msg" role="status"></p>
+          <div class="baris-tombol">
+            <button id="a-sumber-simpan" class="btn btn-primary">Hubungkan &amp; Periksa</button>
+            <button id="a-segarkan" class="btn btn-ghost">Segarkan pilihan</button>
+          </div>
+        </div>
+      </details>
     </section>
   </main>
 

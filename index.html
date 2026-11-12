@@ -42,18 +42,17 @@
     <section id="v-nik" class="view" hidden>
       <div class="nik-layout">
         <div class="sapa">
-          <p class="sapa-kecil">Selamat datang di</p>
-          <h1 class="sapa-judul">Kantor Desa <span id="sapa-desa">Merden</span></h1>
+          <h1 class="sapa-merek">Buku Tamu</h1>
+          <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan Anda dalam 2 langkah.</p>
           <p class="sapa-tgl" id="sapa-tgl"></p>
           <ol class="alur" aria-label="Langkah mengisi">
-            <li class="on"><b>1</b>Masukkan NIK</li>
-            <li><b>2</b>Pilih keperluan</li>
-            <li><b>3</b>Simpan</li>
+            <li class="on"><b>1</b>Ketik NIK — data Anda muncul otomatis</li>
+            <li><b>2</b>Pilih keperluan, lalu Simpan</li>
           </ol>
         </div>
 
         <div class="card nik-card">
-          <label class="judul-langkah" for="nik-input">Masukkan NIK Anda <span class="muted">(16 angka, ada di KTP/KK)</span></label>
+          <label class="judul-langkah" for="nik-input">Ketik NIK Anda <span class="muted">(16 angka di KTP/KK)</span></label>
           <input id="nik-input" class="nik-input" inputmode="none" autocomplete="off" readonly aria-describedby="nik-count">
           <div class="nik-bar"><i id="nik-progress"></i></div>
           <p id="nik-count" class="nik-count">0 dari 16 angka</p>
@@ -73,8 +72,37 @@
           </div>
           <div id="nama-hasil" class="hasil"></div>
 
-          <button class="link-manual" data-go="manual">Tidak punya NIK atau tamu dari luar desa? <b>Isi manual</b></button>
+          <div class="pemisah"><span>atau</span></div>
+          <button class="btn btn-hijau btn-lg lebar" data-go="manual">Isi manual (tanpa NIK / dari luar desa)</button>
         </div>
+      <button class="ajak-nilai" data-go="nilai">
+        <span class="bintang-kecil" aria-hidden="true">★★★★★</span>
+        <span><b>Sudah selesai dilayani?</b> Beri nilai pelayanan kami</span>
+        <span aria-hidden="true">›</span>
+      </button>
+      </div>
+    </section>
+
+    <!-- PENILAIAN KEPUASAN -->
+    <section id="v-nilai" class="view" hidden>
+      <div class="card nilai-card">
+        <h1>Bagaimana pelayanan kami hari ini?</h1>
+        <p class="muted">Sentuh bintang. Penilaian tanpa nama dan hanya butuh beberapa detik.</p>
+        <div class="bintang" id="n-bintang" role="radiogroup" aria-label="Nilai pelayanan">
+          <button type="button" role="radio" aria-checked="false" data-n="1" aria-label="1 bintang, sangat tidak puas">★</button>
+          <button type="button" role="radio" aria-checked="false" data-n="2" aria-label="2 bintang, tidak puas">★</button>
+          <button type="button" role="radio" aria-checked="false" data-n="3" aria-label="3 bintang, cukup">★</button>
+          <button type="button" role="radio" aria-checked="false" data-n="4" aria-label="4 bintang, puas">★</button>
+          <button type="button" role="radio" aria-checked="false" data-n="5" aria-label="5 bintang, sangat puas">★</button>
+        </div>
+        <p class="n-label" id="n-label" aria-live="polite">Pilih 1 sampai 5 bintang</p>
+        <div id="n-lanjutan" hidden>
+          <p class="n-tanya" id="n-tanya"></p>
+          <div class="chips chips-kecil n-catatan" id="n-catatan"></div>
+          <textarea id="n-saran" rows="2" maxlength="300" autocapitalize="sentences" placeholder="Saran atau masukan (boleh dikosongkan)"></textarea>
+        </div>
+        <button class="btn btn-primary btn-xl" id="n-kirim" disabled>Kirim Penilaian</button>
+        <button class="btn btn-ghost lebar" data-go="nik">Kembali</button>
       </div>
     </section>
 
@@ -212,6 +240,12 @@
         </div>
         <p class="muted kecil">File Excel berisi kop desa, daftar tamu lengkap, tanda tangan Kepala Desa, dan sheet <b>Rekap</b> (jumlah per keperluan, dusun, umur, tanggal).</p>
       </div>
+      <details class="card saran-kartu" id="l-saran" hidden>
+        <summary>Kepuasan &amp; saran pengunjung</summary>
+        <div id="l-sebaran" class="sebaran"></div>
+        <h3>Saran terbaru</h3>
+        <ul id="l-saran-list" class="saran-list"></ul>
+      </details>
       <div class="tabel-kartu">
         <div class="tabel-alat">
           <input type="search" id="d-q" enterkeyhint="search" autocorrect="off" spellcheck="false" placeholder="Cari nama, keperluan, dusun…" aria-label="Cari tamu">

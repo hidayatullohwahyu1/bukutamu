@@ -169,6 +169,7 @@ function tampil(id) {
   if (id === 'nik') resetNik();
   if (id === 'daftar') muatLaporan();
   if (id === 'atur') muatPengaturan();
+  if (id === 'nilai') resetNilai();
   resetDiam();
 }
 
@@ -206,7 +207,7 @@ let _diam;
 function resetDiam() {
   clearTimeout(_diam);
   if (petugas()) return;
-  const perlu = S.view === 'pilih' || S.view === 'form' || (S.view === 'nik' && S.nik);
+  const perlu = S.view === 'pilih' || S.view === 'form' || S.view === 'nilai' || (S.view === 'nik' && S.nik);
   if (perlu) _diam = setTimeout(() => { if (!$('#dlg-konfirmasi').open) tampil('nik'); }, BATAS_DIAM_MS);
 }
 ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, resetDiam, { passive: true }));
@@ -259,7 +260,7 @@ function pilihChip(sel, nilai) {
 
 document.addEventListener('click', e => {
   const b = e.target.closest('.chips button');
-  if (!b || b.closest('#d-periode')) return;
+  if (!b || b.closest('#d-periode') || b.closest('#n-catatan')) return;
   const box = b.parentElement;
   const nyala = !b.classList.contains('on') || box.id === 'c-rw';
   $$('button', box).forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
@@ -307,7 +308,10 @@ function getar() {
 function tekanNik(k) {
   if (k === 'hapus') S.nik = S.nik.slice(0, -1);
   else if (k === 'cari') { if (S.nik.length === 16) cariNik(); return; }
-  else if (/^\d$/.test(k) && S.nik.length < 16) S.nik += k;
+  else if (/^\d$/.test(k) && S.nik.length < 16) {
+    S.nik += k;
+    if (S.nik.length === 16) { renderNik(); cariNik(); return; }
+  }
   pesan($('#nik-pesan'), '');
   renderNik();
   if (S.nik.length === 1) hangatkan();
@@ -425,6 +429,69 @@ $('#p-simpan').addEventListener('click', () => {
 });
 
 const gabungKet = (keperluan, ket) => keperluan ? (ket ? `${keperluan} - ${ket}` : keperluan) : ket;
+
+/* ================= PENILAIAN KEPUASAN ================= */
+
+const LABEL_NILAI = ['', 'Sangat tidak puas', 'Tidak puas', 'Cukup', 'Puas', 'Sangat puas'];
+const CATATAN_BAIK = ['Cepat', 'Ramah', 'Jelas', 'Mudah', 'Tempat nyaman'];
+const CATATAN_KURANG = ['Lama menunggu', 'Kurang ramah', 'Kurang jelas', 'Syarat rumit', 'Tempat kurang nyaman'];
+S.nilai = { n: 0, catatan: new Set() };
+
+function resetNilai() {
+  S.nilai = { n: 0, catatan: new Set() };
+  $('#n-saran').value = '';
+  gambarBintang();
+}
+function gambarBintang() {
+  const n = S.nilai.n;
+  $$('#n-bintang button').forEach(b => {
+    const k = Number(b.dataset.n);
+    b.classList.toggle('on', k <= n);
+    b.setAttribute('aria-checked', String(k === n));
+  });
+  $('#n-label').textContent = n ? `${LABEL_NILAI[n]} (${n} bintang)` : 'Pilih 1 sampai 5 bintang';
+  $('#n-label').classList.toggle('dipilih', !!n);
+  $('#n-kirim').disabled = !n;
+  $('#n-lanjutan').hidden = !n;
+  if (n) {
+    $('#n-tanya').textContent = n >= 4 ? 'Apa yang Anda sukai? (boleh pilih lebih dari satu)' : 'Apa yang perlu kami perbaiki? (boleh pilih lebih dari satu)';
+    const daftar = n >= 4 ? CATATAN_BAIK : CATATAN_KURANG;
+    S.nilai.catatan = new Set([...S.nilai.catatan].filter(c => daftar.includes(c)));
+    $('#n-catatan').innerHTML = daftar.map(c => `<button type="button" data-v="${esc(c)}" class="${S.nilai.catatan.has(c) ? 'on' : ''}" aria-pressed="${S.nilai.catatan.has(c)}">${esc(c)}</button>`).join('');
+  }
+}
+$('#n-bintang').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (e.isTrusted) getar();
+  S.nilai.n = Number(b.dataset.n);
+  gambarBintang();
+});
+$('#n-catatan').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const c = b.dataset.v;
+  if (S.nilai.catatan.has(c)) S.nilai.catatan.delete(c); else S.nilai.catatan.add(c);
+  b.classList.toggle('on', S.nilai.catatan.has(c));
+  b.setAttribute('aria-pressed', String(S.nilai.catatan.has(c)));
+});
+$('#n-kirim').addEventListener('click', () => sibuk($('#n-kirim'), async () => {
+  if (!S.nilai.n) return;
+  const id = uuid();
+  const data = { id, nilai: S.nilai.n, catatan: [...S.nilai.catatan], saran: $('#n-saran').value.trim(), tanggal: isoKeDmy(isoHariIni()) };
+  const item = { id, aksi: 'nilai', data, dibuat: Date.now() };
+  try { await Antrean.tambah(item); } catch (e) { /* tanpa IndexedDB: kirim langsung di bawah */ }
+  if (navigator.onLine) await Promise.race([kirimSatu(item).catch(() => null), tunggu(TUNGGU_NOMOR_MS)]);
+  perbaruiAntrean();
+  $('#terima-judul').textContent = 'Terima kasih atas penilaian Anda';
+  $('#terima-pesan').textContent = data.nilai >= 4 ? 'Senang bisa melayani Anda dengan baik.' : 'Masukan Anda membantu kami memperbaiki pelayanan.';
+  $('#terima-no').textContent = '★'.repeat(data.nilai) + '☆'.repeat(5 - data.nilai);
+  tampil('terima');
+  const bar = $('#terima-bar');
+  bar.classList.remove('jalan'); void bar.offsetWidth; bar.classList.add('jalan');
+  clearTimeout(layarTerima._t);
+  layarTerima._t = setTimeout(() => { if (S.view === 'terima') tampil('nik'); }, LAMA_TERIMA_MS);
+}));
 
 /* ================= ISI MANUAL / UBAH ================= */
 
@@ -634,7 +701,9 @@ async function kirimSatu(item) {
   if (_sedangKirim.has(item.id)) return null;
   _sedangKirim.add(item.id);
   try {
-    const r = await api('simpan', { data: item.data }, { timeout: 30000 });
+    const r = item.aksi === 'nilai'
+      ? await api('nilai', item.data, { timeout: 30000 })
+      : await api('simpan', { data: item.data }, { timeout: 30000 });
     await Antrean.hapus(item.id);
     return r.no;
   } catch (e) {
@@ -711,7 +780,7 @@ async function perbaruiAntrean() {
   if (S.view === 'atur') {
     $('#a-antrean').textContent = items.length ? `${items.length} data belum terkirim ke server.` : 'Semua data sudah terkirim.';
     $('#a-antrean-list').innerHTML = items.filter(i => i.galat).map(i => `
-      <div class="kartu-hasil"><span><b>${esc(i.data.nama)}</b><span class="muted">${esc(i.data.tanggal)} · ${esc(i.galat)}</span></span>
+      <div class="kartu-hasil"><span><b>${esc(i.aksi === 'nilai' ? 'Penilaian ' + '★'.repeat(i.data.nilai) : i.data.nama)}</b><span class="muted">${esc(i.data.tanggal)} · ${esc(i.galat)}</span></span>
       <span class="baris-tombol"><button class="btn btn-ghost btn-sm" data-ulang="${esc(i.id)}">Coba lagi</button><button class="btn btn-danger btn-sm" data-buang="${esc(i.id)}">Buang</button></span></div>`).join('');
   }
 }
@@ -793,6 +862,17 @@ function infoBulan() {
   return { v, tahun, bulan, akhir, nama: `${BULAN[bulan - 1]} ${tahun}`, dari: `${v}-01`, sampai: `${v}-${pad2(akhir)}` };
 }
 
+function tampilSaran(nl) {
+  const box = $('#l-saran');
+  if (!nl || !nl.jumlah) { box.hidden = true; return; }
+  box.hidden = false;
+  const maks = Math.max(1, ...nl.sebaran);
+  $('#l-sebaran').innerHTML = [5, 4, 3, 2, 1].map(n => `<div class="sebar"><span>${n} ★</span><i><b style="width:${nl.sebaran[n - 1] / maks * 100}%"></b></i><em>${nl.sebaran[n - 1]}</em></div>`).join('');
+  $('#l-saran-list').innerHTML = nl.saran.length
+    ? nl.saran.slice(0, 10).map(s => `<li><span class="bintang-isi">${'★'.repeat(s.nilai)}</span> ${esc(s.saran)} <span class="muted">· ${esc(dmyPanjang(s.tanggal))}</span></li>`).join('')
+    : '<li class="muted">Belum ada saran tertulis.</li>';
+}
+
 /** Hitung ringkasan dari daftar tamu (dipakai layar, Excel, dan cetak) */
 function hitungRekap(rows, b) {
   // perHari berupa array (indeks 0 = tanggal 1) agar urutan tanggal selalu benar
@@ -824,9 +904,12 @@ async function muatLaporan() {
   tb.innerHTML = '<tr><td colspan="13" class="kosong">Memuat…</td></tr>';
   $('#l-kpi').innerHTML = '';
   try {
-    const r = await api('daftar', { filter: { dari: b.dari, sampai: b.sampai, batas: 100000 } }, { ulang: 1, timeout: 60000 });
+    const [r, nl] = await Promise.all([
+      api('daftar', { filter: { dari: b.dari, sampai: b.sampai, batas: 100000 } }, { ulang: 1, timeout: 60000 }),
+      api('rekapNilai', { filter: { dari: b.dari, sampai: b.sampai } }, { ulang: 1, timeout: 60000 }).catch(() => null)
+    ]);
     if (ke !== _muatKe) return; // sudah ada permintaan bulan lain yang lebih baru
-    S.bulan = { info: b, rows: r.data.slice().sort((x, y) => urutKunci(y).localeCompare(urutKunci(x))) };
+    S.bulan = { info: b, rows: r.data.slice().sort((x, y) => urutKunci(y).localeCompare(urutKunci(x))), nilai: nl };
     const rk = hitungRekap(S.bulan.rows, b);
     const hariIni = isoKeDmy(isoHariIni());
     const jmlHariIni = S.bulan.rows.filter(t => t.tanggal === hariIni).length;
@@ -835,7 +918,9 @@ async function muatLaporan() {
       <div><b>${rk.total}</b><span>Tamu ${esc(b.nama)}</span></div>
       <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki / Perempuan</span></div>
       <div><b>${hariIni.endsWith(b.v.slice(0, 4)) && hariIni.slice(3, 5) === b.v.slice(5) ? jmlHariIni : '–'}</b><span>Tamu hari ini</span></div>
+      <div class="kpi-nilai"><b>${nl && nl.jumlah ? '★ ' + String(nl.rata).replace('.', ',') : '–'}</b><span>Kepuasan${nl && nl.jumlah ? ` (${nl.jumlah} penilai)` : ''}</span></div>
       <div><b class="kecil">${esc(kpTeratas ? labelKeperluan(kpTeratas) : '-')}</b><span>Keperluan terbanyak</span></div>`;
+    tampilSaran(nl);
     S.tabel.hal = 1;
     renderDaftar();
   } catch (e) {
@@ -1099,14 +1184,14 @@ async function buatExcel(rows, b) {
   wr.getCell('A1').font = { bold: true, size: 13 }; wr.getCell('A1').alignment = { horizontal: 'center' };
   wr.mergeCells('A2:C2'); wr.getCell('A2').value = `Bulan ${b.nama}`; wr.getCell('A2').alignment = { horizontal: 'center' };
   let baris = 4;
-  const tabel = (judul, pasangan, denganPersen = true) => {
+  const tabel = (judul, pasangan, denganPersen = true, penyebut = rk.total) => {
     const h = wr.getRow(baris);
     h.values = [judul, 'Jumlah', denganPersen ? 'Persen' : ''];
     h.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU } }; c.border = garis; });
     baris++;
     pasangan.forEach(([k, v], i) => {
       const r = wr.getRow(baris++);
-      r.values = [k, v, denganPersen && rk.total ? v / rk.total : ''];
+      r.values = [k, v, denganPersen && penyebut ? v / penyebut : ''];
       r.getCell(3).numFmt = '0.0%';
       r.eachCell({ includeEmpty: true }, c => { c.border = garis; if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU_MUDA } }; });
       r.getCell(2).alignment = { horizontal: 'center' };
@@ -1118,6 +1203,11 @@ async function buatExcel(rows, b) {
   tabel('Keperluan', urutObj(rk.keperluan));
   tabel('Dusun', urutObj(rk.dusun));
   tabel('Kelompok umur', Object.keys(rk.umur).map(k => [k, rk.umur[k]]));
+  const nl = S.bulan && S.bulan.nilai;
+  if (nl && nl.jumlah) {
+    tabel('Kepuasan pelayanan', [['Jumlah penilaian', nl.jumlah], ['Rata-rata bintang (1–5)', nl.rata], ['Puas & sangat puas (4–5 bintang)', nl.sebaran[3] + nl.sebaran[4]]], false);
+    tabel('Sebaran bintang', [5, 4, 3, 2, 1].map(n => [`${n} bintang – ${LABEL_NILAI[n]}`, nl.sebaran[n - 1]]), true, nl.jumlah);
+  }
   tabel('Tamu per tanggal', rk.perHari.map((n, i) => [`${i + 1} ${b.nama}`, n]), false);
 
   const buf = await wb.xlsx.writeBuffer();
@@ -1153,7 +1243,7 @@ $('#l-cetak').addEventListener('click', () => {
       <div class="besar">DESA ${esc((d.nama || 'MERDEN').toUpperCase())}</div>
     </div>
     <h3>BUKU TAMU BULAN ${esc(b.nama.toUpperCase())}</h3>
-    <p style="text-align:center;margin:0 0 8px">Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P})</p>
+    <p style="text-align:center;margin:0 0 8px">Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P})${S.bulan.nilai && S.bulan.nilai.jumlah ? ` · Kepuasan pelayanan: ${String(S.bulan.nilai.rata).replace('.', ',')} dari 5 (${S.bulan.nilai.jumlah} penilai)` : ''}</p>
     <table><thead><tr>${KOLOM_L.map(k => `<th>${k}</th>`).join('')}</tr></thead>
     <tbody>${urut.map(t => `<tr>${barisCetak(t).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
     <div class="ttd">

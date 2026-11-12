@@ -1,15 +1,17 @@
 /* Service worker SIMPEL Merden
  * Naikkan VERSI setiap kali file aplikasi diubah agar tablet mengambil versi baru. */
-const VERSI = 'simpel-v14';
+const VERSI = 'simpel-v15';
 const ASET = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './icons/logo.svg',
+  './icons/logo.png',
+  './icons/favicon-32.png',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', e => {

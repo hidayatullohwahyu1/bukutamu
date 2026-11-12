@@ -1,6 +1,6 @@
 /* Service worker SIMPEL Merden
  * Naikkan VERSI setiap kali file aplikasi diubah agar tablet mengambil versi baru. */
-const VERSI = 'simpel-v13';
+const VERSI = 'simpel-v14';
 const ASET = [
   './',
   './index.html',

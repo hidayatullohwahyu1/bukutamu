@@ -863,4 +863,37 @@ body.mengetik #n-kirim { position: static; }
 .sapa-merek span { color: var(--teks); font-weight: 700; }
 .sapa-kepanjangan { margin: -6px 0 14px; font-size: .9rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teks-2); }
 @media (max-width: 960px) { .sapa-kepanjangan { margin: -2px 0 8px; font-size: .78rem; } }
-@media (max-height: 700px) and (orientation: portrait) { .sapa-kepanjangan { margin: 2px 0 4px; font-size: .7rem; } }
+@media (max-height: 700px) and (orientation: portrait) { .sapa-kepanjangan { margin: 2px 0 4px; font-size: .75rem; letter-spacing: .1em; } }
+
+/* Tablet mendatar / layar lebar tetapi pendek: semua tombol layar awal muat tanpa digulir */
+@media (min-width: 961px) and (max-height: 820px) {
+  .nik-layout { min-height: calc(100dvh - 96px); gap: 24px; }
+  .sapa-merek { font-size: 2.8rem; margin-bottom: 8px; }
+  .sapa-tagline { font-size: 1.2rem; }
+  .alur { gap: 8px; }
+  .nik-card { padding: 18px 20px; }
+  .nik-input { padding-top: 10px; padding-bottom: 10px; }
+  .keypad { gap: 8px; margin-top: 8px; }
+  .keypad button { min-height: 50px; font-size: 1.35rem; }
+  .nik-card > .pemisah { margin: 10px 0 8px; }
+  .nik-layout > .ajak-nilai { margin-top: 16px; }
+}
+@media (min-width: 961px) and (max-height: 660px) {
+  .sapa-merek { font-size: 2.3rem; }
+  .sapa-tagline { font-size: 1.05rem; }
+  .sapa-tgl { margin: 0 0 6px; }
+  .alur li { font-size: .9rem; }
+  .nik-card { padding: 14px 18px; }
+  .nik-card .judul-langkah { margin-bottom: 6px; }
+  .keypad { gap: 6px; }
+  .keypad button { min-height: 42px; font-size: 1.2rem; }
+  .nik-card > .pemisah { margin: 6px 0; font-size: .8rem; }
+  .nik-card > .btn-hijau { min-height: 46px; }
+}
+
+/* keterbacaan: label kecil minimal 12px */
+@media (max-width: 960px) {
+  .nav button { font-size: .78rem; }
+  .laporan .kpi span { font-size: .75rem; }
+}
+@media (max-width: 640px) { .langkah-form li { font-size: .78rem; } }

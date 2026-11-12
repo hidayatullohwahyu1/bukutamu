@@ -44,7 +44,7 @@
         <div class="sapa">
           <h1 class="sapa-merek">SIMPEL <span>Merden</span></h1>
           <p class="sapa-kepanjangan">Sistem Informasi Pelayanan</p>
-          <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan Anda dalam 2 langkah.</p>
+          <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan Anda dalam dua langkah.</p>
           <p class="sapa-tgl" id="sapa-tgl"></p>
           <ol class="alur" aria-label="Langkah mengisi">
             <li class="on"><b>1</b>Ketik NIK — data Anda muncul otomatis</li>
@@ -74,7 +74,7 @@
           <div id="nama-hasil" class="hasil"></div>
 
           <div class="pemisah"><span>atau</span></div>
-          <button class="btn btn-hijau btn-lg lebar" data-go="manual">Isi manual (tanpa NIK / dari luar desa)</button>
+          <button class="btn btn-hijau btn-lg lebar" data-go="manual">Isi manual (tanpa NIK/dari luar desa)</button>
         </div>
       <button class="ajak-nilai" data-go="nilai">
         <span class="bintang-kecil" aria-hidden="true">★★★★★</span>
@@ -88,7 +88,7 @@
     <section id="v-nilai" class="view" hidden>
       <div class="card nilai-card">
         <h1>Bagaimana pelayanan kami hari ini?</h1>
-        <p class="muted">Sentuh bintang. Penilaian tanpa nama dan hanya butuh beberapa detik.</p>
+        <p class="muted">Sentuh bintang. Penilaian ini tanpa nama dan hanya memerlukan beberapa detik.</p>
         <div class="bintang" id="n-bintang" role="radiogroup" aria-label="Nilai pelayanan">
           <button type="button" role="radio" aria-checked="false" data-n="1" aria-label="1 bintang, sangat tidak puas">★</button>
           <button type="button" role="radio" aria-checked="false" data-n="2" aria-label="2 bintang, tidak puas">★</button>
@@ -96,13 +96,13 @@
           <button type="button" role="radio" aria-checked="false" data-n="4" aria-label="4 bintang, puas">★</button>
           <button type="button" role="radio" aria-checked="false" data-n="5" aria-label="5 bintang, sangat puas">★</button>
         </div>
-        <p class="n-label" id="n-label" aria-live="polite">Pilih 1 sampai 5 bintang</p>
+        <p class="n-label" id="n-label" aria-live="polite">Pilih satu sampai lima bintang</p>
         <div id="n-lanjutan" hidden>
           <p class="n-tanya" id="n-tanya"></p>
           <div class="chips chips-kecil n-catatan" id="n-catatan"></div>
           <textarea id="n-saran" rows="2" maxlength="300" autocapitalize="sentences" placeholder="Saran atau masukan (boleh dikosongkan)"></textarea>
         </div>
-        <button class="btn btn-primary btn-xl" id="n-kirim" disabled>Kirim Penilaian</button>
+        <button class="btn btn-primary btn-xl" id="n-kirim" disabled>Kirim penilaian</button>
         <button class="btn btn-ghost lebar" data-go="nik">Kembali</button>
       </div>
     </section>
@@ -127,7 +127,7 @@
           <label>Keterangan tambahan <span class="muted">(boleh dikosongkan)</span>
             <textarea id="p-ket" rows="2" maxlength="250" autocapitalize="sentences" enterkeyhint="done" placeholder="Contoh: untuk pendaftaran sekolah anak"></textarea>
           </label>
-          <button class="btn btn-primary btn-xl" id="p-simpan">SIMPAN</button>
+          <button class="btn btn-primary btn-xl" id="p-simpan">Simpan</button>
         </div>
       </div>
     </section>
@@ -145,7 +145,7 @@
       </ol>
       <form id="form-tamu" class="card" novalidate>
         <fieldset data-langkah="1">
-          <legend>Langkah 1 dari 3 — Data diri</legend>
+          <legend>Langkah 1 dari 3 — Data Diri</legend>
           <div class="grid">
             <label class="span2" data-f="nama">Nama lengkap
               <input id="f-nama" type="text" maxlength="100" class="upper" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next" placeholder="Sesuai KTP">
@@ -188,7 +188,7 @@
               <div class="chips num" id="c-rw"></div><small></small>
             </div>
             <div class="field span2" data-f="rt">RT
-              <div class="chips num" id="c-rt"><span class="muted">Pilih RW dulu</span></div><small></small>
+              <div class="chips num" id="c-rt"><span class="muted">Pilih RW terlebih dahulu</span></div><small></small>
             </div>
           </div>
         </fieldset>
@@ -236,15 +236,15 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Unduh Excel
           </button>
           <button id="l-cetak" class="btn btn-ghost btn-lg">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>Cetak / PDF
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>Cetak/PDF
           </button>
         </div>
-        <p class="muted kecil">File Excel berisi kop desa, daftar tamu lengkap, tanda tangan Kepala Desa, dan sheet <b>Rekap</b> (jumlah per keperluan, dusun, umur, tanggal).</p>
+        <p class="muted kecil">File Excel berisi tiga sheet: <b>Ringkasan</b> (dasbor angka, kesimpulan, dan kepuasan pelayanan), <b>Buku Tamu</b> (daftar kunjungan lengkap dengan tanda tangan Kepala Desa), dan <b>Penilaian</b> (setiap penilaian bintang tanpa nama).</p>
       </div>
       <details class="card saran-kartu" id="l-saran" hidden>
-        <summary>Kepuasan &amp; saran pengunjung</summary>
+        <summary>Kepuasan dan Saran Pengunjung</summary>
         <div id="l-sebaran" class="sebaran"></div>
-        <h3>Saran terbaru</h3>
+        <h3>Saran Terbaru</h3>
         <ul id="l-saran-list" class="saran-list"></ul>
       </details>
       <div class="tabel-kartu">
@@ -302,8 +302,8 @@
       <h1>Atur</h1>
       <div data-peran="admin">
         <div class="card">
-          <h2>Identitas desa</h2>
-          <p class="muted">Dipakai di kop dan tanda tangan laporan Excel / cetak.</p>
+          <h2>Identitas Desa</h2>
+          <p class="muted">Digunakan pada kop dan tanda tangan laporan Excel atau hasil cetak.</p>
           <div class="grid">
             <label>Nama Kepala Desa <input id="a-NAMA_KADES" placeholder="Nama lengkap Kepala Desa"></label>
             <label>Nama desa <input id="a-NAMA_DESA"></label>
@@ -315,8 +315,8 @@
         </div>
 
         <div class="card">
-          <h2>Ganti PIN admin</h2>
-          <p class="muted">PIN ini dipakai untuk tombol Admin. Ganti PIN awal agar data tamu aman.</p>
+          <h2>Ganti PIN Admin</h2>
+          <p class="muted">PIN ini digunakan untuk masuk sebagai admin. Segera ganti PIN awal agar data tamu aman.</p>
           <label>PIN baru (6 angka)
             <input id="a-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password">
           </label>
@@ -326,26 +326,26 @@
       </div>
 
       <div class="card" id="a-pasang-kartu" hidden>
-        <h2>Pasang aplikasi di perangkat ini</h2>
-        <p class="muted">Membuat ikon SIMPEL Merden di layar HP/tablet, terbuka layar penuh seperti aplikasi biasa.</p>
+        <h2>Pasang Aplikasi di Perangkat Ini</h2>
+        <p class="muted">Menambahkan ikon SIMPEL Merden di layar HP/tablet sehingga aplikasi terbuka layar penuh seperti aplikasi biasa.</p>
         <button id="a-pasang" class="btn btn-primary">Pasang aplikasi</button>
       </div>
 
       <details class="card lanjutan">
-        <summary>Pengaturan lanjutan (teknis)</summary>
-        <h2>Data yang belum terkirim</h2>
+        <summary>Pengaturan Lanjutan (Teknis)</summary>
+        <h2>Data yang Belum Terkirim</h2>
         <p id="a-antrean" class="muted"></p>
         <button id="a-kirim" class="btn btn-ghost">Kirim sekarang</button>
         <div id="a-antrean-list" class="hasil"></div>
 
         <div data-peran="admin">
-          <h2>Nomor urut tamu</h2>
+          <h2>Nomor Urut Tamu</h2>
           <label>Diulang dari 1 setiap
             <select id="a-RESET_NO"><option value="TAHUN">Tahun</option><option value="BULAN">Bulan</option><option value="HARI">Hari</option></select>
           </label>
-          <p class="muted kecil">Tersimpan bersama tombol Simpan pada Identitas desa.</p>
+          <p class="muted kecil">Disimpan melalui tombol Simpan pada bagian Identitas Desa.</p>
 
-          <h2>Sumber data penduduk (Kartu Pintar)</h2>
+          <h2>Sumber Data Penduduk (Kartu Pintar)</h2>
           <p class="muted" id="a-sumber-info"></p>
           <label>Alamat spreadsheet Kartu Pintar
             <input id="a-SUMBER_PENDUDUK" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off" spellcheck="false">
@@ -355,7 +355,7 @@
           </label>
           <p id="a-sumber-pesan" class="msg" role="status"></p>
           <div class="baris-tombol">
-            <button id="a-sumber-simpan" class="btn btn-primary">Hubungkan &amp; Periksa</button>
+            <button id="a-sumber-simpan" class="btn btn-primary">Hubungkan dan periksa</button>
             <button id="a-segarkan" class="btn btn-ghost">Segarkan pilihan</button>
           </div>
         </div>
@@ -365,7 +365,7 @@
 
   <!-- konfirmasi isi manual -->
   <dialog id="dlg-konfirmasi">
-    <h2>Periksa data Anda</h2>
+    <h2>Periksa Data Anda</h2>
     <table class="ringkasan" id="k-tabel"></table>
     <p id="k-pesan" class="msg" role="status"></p>
     <div class="dlg-actions">

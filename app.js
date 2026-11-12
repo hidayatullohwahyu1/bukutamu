@@ -199,7 +199,7 @@ function aturNet() {
   const on = navigator.onLine;
   const dot = $('#net');
   dot.classList.toggle('off', !on);
-  dot.title = on ? 'Online' : 'Offline — data disimpan di tablet';
+  dot.title = on ? 'Tersambung ke internet' : 'Tidak ada internet — data disimpan di tablet';
   if (on) kirimAntrean();
 }
 
@@ -284,7 +284,7 @@ function isiRt(rw, pilih) {
 function resetNik() {
   S.nik = ''; S.terisi = null;
   renderNik();
-  pesan($('#nik-pesan'), navigator.onLine ? '' : 'Sedang offline. Silakan pilih "Isi manual" di bawah.', navigator.onLine ? '' : 'err');
+  pesan($('#nik-pesan'), navigator.onLine ? '' : 'Internet sedang terputus. Silakan pilih "Isi manual" di bawah.', navigator.onLine ? '' : 'err');
   $('#nama-hasil').innerHTML = '';
   $('#cari-nama').value = '';
   hangatkan();
@@ -345,7 +345,7 @@ document.addEventListener('paste', e => {
 
 async function cariNik() {
   const msg = $('#nik-pesan');
-  if (!navigator.onLine) { pesan(msg, 'Sedang offline. Silakan pilih "Isi manual".', 'err'); return; }
+  if (!navigator.onLine) { pesan(msg, 'Internet sedang terputus. Silakan pilih "Isi manual".', 'err'); return; }
   await sibuk($('#nik-cari'), async () => {
     try {
       const r = await api('cariNik', { nik: S.nik }, { ulang: 1, timeout: 20000 });
@@ -449,7 +449,7 @@ function gambarBintang() {
     b.classList.toggle('on', k <= n);
     b.setAttribute('aria-checked', String(k === n));
   });
-  $('#n-label').textContent = n ? `${LABEL_NILAI[n]} (${n} bintang)` : 'Pilih 1 sampai 5 bintang';
+  $('#n-label').textContent = n ? `${LABEL_NILAI[n]} (${n} bintang)` : 'Pilih satu sampai lima bintang';
   $('#n-label').classList.toggle('dipilih', !!n);
   $('#n-kirim').disabled = !n;
   $('#n-lanjutan').hidden = !n;
@@ -552,7 +552,7 @@ function siapkanForm(d) {
   f.reset();
   $$('[data-f]', f).forEach(bersihSalah);
   ['#c-lp', '#c-agama', '#c-status', '#c-rw', '#c-keperluan'].forEach(s => pilihChip(s, ''));
-  $('#c-rt').innerHTML = '<span class="muted">Pilih RW dulu</span>';
+  $('#c-rt').innerHTML = '<span class="muted">Pilih RW terlebih dahulu</span>';
   $('#f-dusun').textContent = '';
   $('#alamat-desa').hidden = false;
   $('#f-tanggal').value = isoHariIni();
@@ -612,7 +612,7 @@ function bersihSalah(el) {
 function validasiForm(d, hanya) {
   const salah = {};
   if (d.nama.length < 3) salah.nama = 'Nama minimal 3 huruf';
-  if (d.nik && d.nik.length !== 16) salah.nik = 'NIK harus 16 angka, atau kosongkan';
+  if (d.nik && d.nik.length !== 16) salah.nik = 'NIK harus 16 angka atau dikosongkan';
   if (!d.lp) salah.lp = 'Pilih jenis kelamin';
   if (!d.tempatLahir) salah.tempatLahir = 'Tempat lahir wajib diisi';
   if (!d.tanggalLahir) salah.tanggalLahir = $('#f-tgllahir').value.trim() ? 'Tanggal tidak benar. Tulis seperti 05-04-1984' : 'Tanggal lahir wajib diisi';
@@ -643,7 +643,7 @@ function tampilLangkah(n) {
   S.langkah = n;
   $$('#form-tamu fieldset[data-langkah]').forEach(fs => { fs.hidden = Number(fs.dataset.langkah) !== n; });
   $$('#langkah-form li').forEach((li, i) => { li.classList.toggle('on', i + 1 === n); li.classList.toggle('selesai', i + 1 < n); });
-  $('#form-simpan').textContent = n < 3 ? 'Lanjut' : (S.mode === 'ubah' ? 'Simpan Perubahan' : 'Simpan');
+  $('#form-simpan').textContent = n < 3 ? 'Lanjut' : (S.mode === 'ubah' ? 'Simpan perubahan' : 'Simpan');
   $('#batal-btn').textContent = n > 1 ? 'Kembali' : 'Batal';
   window.scrollTo(0, 0);
 }
@@ -668,7 +668,7 @@ $('#form-tamu').addEventListener('submit', e => {
   S._kirim = d;
   const baris = [
     ['Tanggal', dmyPanjang(d.tanggal)], ['Nama', d.nama], ['NIK', d.nik || '-'], ['Jenis kelamin', d.lp === 'P' ? 'Perempuan' : 'Laki-laki'],
-    ['Tempat, tgl lahir', `${d.tempatLahir}, ${d.tanggalLahir}`], ['Agama', d.agama], ['Status perkawinan', d.status],
+    ['Tempat, tanggal lahir', `${d.tempatLahir}, ${d.tanggalLahir}`], ['Agama', d.agama], ['Status perkawinan', d.status],
     ['Pekerjaan', d.pekerjaan], ['Alamat', d.rw === '-' ? 'Luar Desa Merden' : `RT ${d.rt} / RW ${d.rw}, Dusun ${judulKata(d.dusun)}`],
     ['Keterangan', d.keterangan]
   ];
@@ -778,6 +778,7 @@ async function perbaruiAntrean() {
   p.hidden = !items.length;
   p.textContent = `${items.length} belum terkirim`;
   if (S.view === 'atur') {
+    $('#a-kirim').disabled = !items.length;
     $('#a-antrean').textContent = items.length ? `${items.length} data belum terkirim ke server.` : 'Semua data sudah terkirim.';
     $('#a-antrean-list').innerHTML = items.filter(i => i.galat).map(i => `
       <div class="kartu-hasil"><span><b>${esc(i.aksi === 'nilai' ? 'Penilaian ' + '★'.repeat(i.data.nilai) : i.data.nama)}</b><span class="muted">${esc(i.data.tanggal)} · ${esc(i.galat)}</span></span>
@@ -916,7 +917,7 @@ async function muatLaporan() {
     const kpTeratas = Object.keys(rk.keperluan).sort((x, y) => rk.keperluan[y] - rk.keperluan[x])[0];
     $('#l-kpi').innerHTML = `
       <div><b>${rk.total}</b><span>Tamu ${esc(b.nama)}</span></div>
-      <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki / Perempuan</span></div>
+      <div><b>${rk.L} / ${rk.P}</b><span>Laki-laki/perempuan</span></div>
       <div><b>${hariIni.endsWith(b.v.slice(0, 4)) && hariIni.slice(3, 5) === b.v.slice(5) ? jmlHariIni : '–'}</b><span>Tamu hari ini</span></div>
       <div class="kpi-nilai"><b>${nl && nl.jumlah ? '★ ' + String(nl.rata).replace('.', ',') : '–'}</b><span>Kepuasan${nl && nl.jumlah ? ` (${nl.jumlah} penilai)` : ''}</span></div>
       <div><b class="kecil">${esc(kpTeratas ? labelKeperluan(kpTeratas) : '-')}</b><span>Keperluan terbanyak</span></div>`;
@@ -1017,7 +1018,7 @@ function avatar(nama) {
 }
 function kartuTamu(t) {
   const ket = t.keperluan && String(t.keterangan).toUpperCase().startsWith(t.keperluan)
-    ? String(t.keterangan).slice(t.keperluan.length).replace(/^\s*-\s*/, '') : (t.keperluan ? '' : t.keterangan);
+    ? String(t.keterangan).slice(t.keperluan.length).replace(/^\s*-\s*/, '') : (t.keterangan || '');
   const alamat = t.rw === '-' ? 'Luar desa' : `RT ${t.rt}/RW ${t.rw}`;
   return `<article class="pos">
     <header class="pos-kepala">${avatar(t.nama)}
@@ -1178,13 +1179,13 @@ async function buatExcel(rows, b) {
     wd.getRow(baris).height = 30; wd.getRow(baris + 1).height = 28;
   };
   kotak(rr, 1, rk.total, 'Total kunjungan');
-  kotak(rr, 3, `${rk.L} / ${rk.P}`, 'Laki-laki / Perempuan');
-  kotak(rr, 5, `${rk.warga} / ${rk.luar}`, 'Warga desa / Luar desa');
+  kotak(rr, 3, `${rk.L} / ${rk.P}`, 'Laki-laki/perempuan');
+  kotak(rr, 5, `${rk.warga} / ${rk.luar}`, 'Warga desa/luar desa');
   kotak(rr, 7, koma(rataHari), `Rata-rata tamu per hari layanan (${hariAktif} hari)`);
   rr += 2;
   kotak(rr, 1, nl.jumlah ? `★ ${koma(nl.rata)}` : '-', 'Rata-rata kepuasan (dari 5 bintang)', EMAS);
   kotak(rr, 3, nl.jumlah, `Jumlah penilai (${koma(persen(nl.jumlah, rk.total))}% dari tamu)`, EMAS);
-  kotak(rr, 5, nl.jumlah ? `${koma(persen(puas, nl.jumlah))}%` : '-', 'Puas & sangat puas (4–5 bintang)', EMAS);
+  kotak(rr, 5, nl.jumlah ? `${koma(persen(puas, nl.jumlah))}%` : '-', 'Puas dan sangat puas (4–5 bintang)', EMAS);
   kotak(rr, 7, nl.jumlah ? koma(indeks) : '-', `Indeks kepuasan 0–100 (mutu ${mutu})`, EMAS);
   rr += 3;
 
@@ -1301,7 +1302,7 @@ async function buatExcel(rows, b) {
   Object.assign(ws.getCell(5, 1), { value: `BUKU TAMU BULAN ${b.nama.toUpperCase()}` });
   ws.getCell(5, 1).font = { bold: true, size: 13 }; ws.getCell(5, 1).alignment = { horizontal: 'center' };
   ws.mergeCells(6, 1, 6, 12);
-  ws.getCell(6, 1).value = `Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P}) — warga desa ${rk.warga}, luar desa ${rk.luar}`;
+  ws.getCell(6, 1).value = `Jumlah tamu: ${rk.total} orang (laki-laki ${rk.L}, perempuan ${rk.P}) — warga desa ${rk.warga}, luar desa ${rk.luar}`;
   ws.getCell(6, 1).font = { italic: true, size: 10 }; ws.getCell(6, 1).alignment = { horizontal: 'center' };
 
   const kepala = ws.getRow(7);
@@ -1379,7 +1380,7 @@ async function buatExcel(rows, b) {
 
 $('#l-unduh').addEventListener('click', () => sibuk($('#l-unduh'), async () => {
   const b = infoBulan();
-  if (!b) { toast('Pilih bulan dulu.', true); return; }
+  if (!b) { toast('Pilih bulan terlebih dahulu.', true); return; }
   try {
     if (!S.bulan || S.bulan.info.v !== b.v) await muatLaporan();
     if (!S.bulan || !S.bulan.rows.length) { toast(`Belum ada tamu pada ${b.nama}.`, true); return; }
@@ -1400,7 +1401,7 @@ $('#l-cetak').addEventListener('click', () => {
       <div class="besar">DESA ${esc((d.nama || 'MERDEN').toUpperCase())}</div>
     </div>
     <h3>BUKU TAMU BULAN ${esc(b.nama.toUpperCase())}</h3>
-    <p style="text-align:center;margin:0 0 8px">Jumlah tamu: ${rk.total} orang (Laki-laki ${rk.L}, Perempuan ${rk.P})${S.bulan.nilai && S.bulan.nilai.jumlah ? ` · Kepuasan pelayanan: ${String(S.bulan.nilai.rata).replace('.', ',')} dari 5 (${S.bulan.nilai.jumlah} penilai)` : ''}</p>
+    <p style="text-align:center;margin:0 0 8px">Jumlah tamu: ${rk.total} orang (laki-laki ${rk.L}, perempuan ${rk.P})${S.bulan.nilai && S.bulan.nilai.jumlah ? ` · Kepuasan pelayanan: ${String(S.bulan.nilai.rata).replace('.', ',')} dari 5 (${S.bulan.nilai.jumlah} penilai)` : ''}</p>
     <table><thead><tr>${KOLOM_L.map(k => `<th>${k}</th>`).join('')}</tr></thead>
     <tbody>${urut.map(t => `<tr>${barisCetak(t).map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
     <div class="ttd">
@@ -1452,7 +1453,7 @@ $('#a-sumber-simpan').addEventListener('click', () => sibuk($('#a-sumber-simpan'
   const msg = $('#a-sumber-pesan');
   const url = $('#a-SUMBER_PENDUDUK').value.trim();
   if (!/docs\.google\.com\/spreadsheets\/d\//.test(url)) { pesan(msg, 'Tempel alamat lengkap spreadsheet Kartu Pintar (https://docs.google.com/spreadsheets/d/...).', 'err'); return; }
-  pesan(msg, 'Menghubungkan dan memeriksa data… (bisa sampai 30 detik)');
+  pesan(msg, 'Menghubungkan dan memeriksa data… (dapat memakan waktu hingga 30 detik)');
   try {
     const r = await api('pengaturan', { set: { SUMBER_PENDUDUK: url, SHEET_PENDUDUK: $('#a-SHEET_PENDUDUK').value.trim() || 'DATA_KK' } }, { timeout: 120000 });
     pesan(msg, ringkasSumber(r.cek), 'ok');
@@ -1474,7 +1475,7 @@ $('#a-segarkan').addEventListener('click', () => sibuk($('#a-segarkan'), async (
 function tampilInfoSumber(d) {
   $('#a-sumber-info').textContent = d.SUMBER_PENDUDUK
     ? `Status: terhubung. Pilihan terakhir disegarkan: ${d.TANGGAL_SEGAR || '-'}`
-    : 'Status: BELUM terhubung — pencarian NIK belum bisa dipakai.';
+    : 'Status: belum terhubung — pencarian NIK belum dapat digunakan.';
 }
 
 /* ================= MULAI ================= */

@@ -1119,7 +1119,171 @@ async function buatExcel(rows, b) {
   wb.creator = 'Buku Tamu Desa ' + namaDesa;
   wb.created = new Date();
 
-  /* ----- Sheet 1: Buku Tamu ----- */
+  const kop = [
+    [`PEMERINTAH KABUPATEN ${(desa.kabupaten || '').toUpperCase()}`, 12, false],
+    [`KECAMATAN ${(desa.kecamatan || '').toUpperCase()}`, 12, false],
+    [`DESA ${namaDesa.toUpperCase()}`, 15, true]
+  ];
+
+  /* ----- Sheet 1: RINGKASAN (dashboard) ----- */
+  const nl = (S.bulan && S.bulan.nilai) || { jumlah: 0, rata: 0, sebaran: [0, 0, 0, 0, 0], catatan: {}, saran: [], daftar: [] };
+  const persen = (a, n) => n ? Math.round(a / n * 1000) / 10 : 0;
+  const koma = x => String(x).replace('.', ',');
+  const hariAktif = rk.perHari.filter(n => n > 0).length;
+  const rataHari = hariAktif ? Math.round(rk.total / hariAktif * 10) / 10 : 0;
+  const hariRamai = rk.perHari.reduce((m, n, i) => (n > m.n ? { n, i } : m), { n: 0, i: -1 });
+  const urutAngka = o => Object.keys(o).filter(k => o[k] > 0).sort((x, y) => o[y] - o[x]);
+  const kpUrut = urutAngka(rk.keperluan);
+  const indeks = nl.jumlah ? Math.round(nl.rata * 20 * 100) / 100 : 0;
+  const mutu = !nl.jumlah ? '-' : indeks >= 88.31 ? 'A – Sangat Baik' : indeks >= 76.61 ? 'B – Baik' : indeks >= 65 ? 'C – Kurang Baik' : 'D – Tidak Baik';
+  const puas = nl.sebaran[3] + nl.sebaran[4];
+  const BIRU = HIJAU, BIRU_MUDA = HIJAU_MUDA, EMAS = 'FFB7791F';
+
+  const wd = wb.addWorksheet('Ringkasan', {
+    pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
+      margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 } },
+    headerFooter: { oddFooter: `&L&8Ringkasan Buku Tamu Desa ${namaDesa} - ${b.nama}&R&8Halaman &P dari &N` },
+    views: [{ showGridLines: false }]
+  });
+  wd.columns = Array.from({ length: 8 }, () => ({ width: 13 }));
+  let rr = 1;
+  const gabung = (baris, k1, k2) => { wd.mergeCells(baris, k1, baris, k2); return wd.getCell(baris, k1); };
+  // kop
+  kop.forEach(([teks, uk, besar]) => {
+    const c = gabung(rr, 1, 8);
+    c.value = teks; c.font = { bold: true, size: uk }; c.alignment = { horizontal: 'center' };
+    if (besar) for (let k = 1; k <= 8; k++) wd.getCell(rr, k).border = { bottom: { style: 'double' } };
+    rr++;
+  });
+  rr++;
+  let c = gabung(rr++, 1, 8);
+  c.value = 'RINGKASAN BUKU TAMU & KEPUASAN PELAYANAN'; c.font = { bold: true, size: 14, color: { argb: BIRU } }; c.alignment = { horizontal: 'center' };
+  c = gabung(rr++, 1, 8);
+  c.value = `Bulan ${b.nama}`; c.font = { size: 11, color: { argb: 'FF65676B' } }; c.alignment = { horizontal: 'center' };
+  rr++;
+
+  // kotak angka utama (2 baris x 4 kotak)
+  const kotak = (baris, kol, nilai, label, warna) => {
+    wd.mergeCells(baris, kol, baris, kol + 1);
+    wd.mergeCells(baris + 1, kol, baris + 1, kol + 1);
+    const v = wd.getCell(baris, kol), l = wd.getCell(baris + 1, kol);
+    v.value = nilai; v.font = { bold: true, size: 18, color: { argb: warna || BIRU } }; v.alignment = { horizontal: 'center', vertical: 'middle' };
+    l.value = label; l.font = { size: 9, color: { argb: 'FF65676B' } }; l.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
+    for (let k = kol; k <= kol + 1; k++) {
+      wd.getCell(baris, k).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BIRU_MUDA } };
+      wd.getCell(baris + 1, k).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BIRU_MUDA } };
+      wd.getCell(baris, k).border = { top: { style: 'medium', color: { argb: 'FFFFFFFF' } }, left: { style: 'medium', color: { argb: 'FFFFFFFF' } }, right: { style: 'medium', color: { argb: 'FFFFFFFF' } } };
+      wd.getCell(baris + 1, k).border = { bottom: { style: 'medium', color: { argb: 'FFFFFFFF' } }, left: { style: 'medium', color: { argb: 'FFFFFFFF' } }, right: { style: 'medium', color: { argb: 'FFFFFFFF' } } };
+    }
+    wd.getRow(baris).height = 30; wd.getRow(baris + 1).height = 28;
+  };
+  kotak(rr, 1, rk.total, 'Total kunjungan');
+  kotak(rr, 3, `${rk.L} / ${rk.P}`, 'Laki-laki / Perempuan');
+  kotak(rr, 5, `${rk.warga} / ${rk.luar}`, 'Warga desa / Luar desa');
+  kotak(rr, 7, koma(rataHari), `Rata-rata tamu per hari layanan (${hariAktif} hari)`);
+  rr += 2;
+  kotak(rr, 1, nl.jumlah ? `★ ${koma(nl.rata)}` : '-', 'Rata-rata kepuasan (dari 5 bintang)', EMAS);
+  kotak(rr, 3, nl.jumlah, `Jumlah penilai (${koma(persen(nl.jumlah, rk.total))}% dari tamu)`, EMAS);
+  kotak(rr, 5, nl.jumlah ? `${koma(persen(puas, nl.jumlah))}%` : '-', 'Puas & sangat puas (4–5 bintang)', EMAS);
+  kotak(rr, 7, nl.jumlah ? koma(indeks) : '-', `Indeks kepuasan 0–100 (mutu ${mutu})`, EMAS);
+  rr += 3;
+
+  // judul bagian
+  const bagian = judul => {
+    const h = gabung(rr++, 1, 8);
+    h.value = judul.toUpperCase(); h.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    h.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BIRU } }; h.alignment = { vertical: 'middle', indent: 1 };
+    wd.getRow(rr - 1).height = 20;
+  };
+
+  // kesimpulan otomatis
+  bagian('Kesimpulan');
+  const kalimat = [];
+  kalimat.push(`Selama ${b.nama} tercatat ${rk.total} kunjungan (${rk.L} laki-laki, ${rk.P} perempuan), rata-rata ${koma(rataHari)} tamu per hari layanan dari ${hariAktif} hari yang ada kunjungan.`);
+  if (hariRamai.i >= 0) kalimat.push(`Hari paling ramai: ${hariRamai.i + 1} ${b.nama} dengan ${hariRamai.n} tamu.`);
+  if (kpUrut.length) kalimat.push(`Keperluan terbanyak: ${labelKeperluan(kpUrut[0])} (${koma(persen(rk.keperluan[kpUrut[0]], rk.total))}%)` + (kpUrut[1] ? `, disusul ${labelKeperluan(kpUrut[1])} (${koma(persen(rk.keperluan[kpUrut[1]], rk.total))}%).` : '.'));
+  kalimat.push(`${koma(persen(rk.warga, rk.total))}% pengunjung adalah warga Desa ${namaDesa}; ${rk.luar} orang berasal dari luar desa.`);
+  if (nl.jumlah) {
+    kalimat.push(`Kepuasan pelayanan rata-rata ${koma(nl.rata)} dari 5 bintang (indeks ${koma(indeks)}, mutu ${mutu}) dari ${nl.jumlah} penilai; ${koma(persen(puas, nl.jumlah))}% menyatakan puas atau sangat puas.`);
+    const baik = urutAngka(nl.catatan).filter(k => CATATAN_BAIK.includes(k)), kurang = urutAngka(nl.catatan).filter(k => CATATAN_KURANG.includes(k));
+    if (baik.length) kalimat.push(`Hal yang paling dihargai warga: ${baik.slice(0, 2).map(k => `${k} (${nl.catatan[k]})`).join(', ')}.`);
+    if (kurang.length) kalimat.push(`Hal yang perlu diperbaiki: ${kurang.slice(0, 2).map(k => `${k} (${nl.catatan[k]})`).join(', ')}.`);
+  } else {
+    kalimat.push('Belum ada penilaian kepuasan pada bulan ini. Ajak pengunjung menekan "Beri nilai pelayanan" setelah selesai dilayani.');
+  }
+  kalimat.forEach(k => {
+    const s = gabung(rr, 1, 8);
+    s.value = '•  ' + k; s.alignment = { wrapText: true, vertical: 'top' }; s.font = { size: 10 };
+    wd.getRow(rr).height = k.length > 105 ? 30 : 16;
+    rr++;
+  });
+  rr++;
+
+  // tabel dengan grafik batang dari teks
+  const tabelGrafik = (judul, pasangan, penyebut, opsi = {}) => {
+    bagian(judul);
+    const h = wd.getRow(rr);
+    wd.mergeCells(rr, 1, rr, 4); wd.mergeCells(rr, 7, rr, 8);
+    h.getCell(1).value = opsi.kolom || 'Uraian'; h.getCell(5).value = 'Jumlah'; h.getCell(6).value = opsi.tanpaPersen ? '' : 'Persen'; h.getCell(7).value = 'Grafik';
+    [1, 5, 6, 7].forEach(k => { const x = h.getCell(k); x.font = { bold: true, size: 9, color: { argb: 'FF65676B' } }; x.alignment = { horizontal: k === 1 ? 'left' : 'center' }; });
+    for (let k = 1; k <= 8; k++) h.getCell(k).border = { bottom: tipis };
+    rr++;
+    const maks = Math.max(1, ...pasangan.map(p => p[1]));
+    if (!pasangan.length) { const x = gabung(rr++, 1, 8); x.value = 'Belum ada data.'; x.font = { italic: true, color: { argb: 'FF65676B' } }; }
+    pasangan.forEach(([k, v], i) => {
+      const r = wd.getRow(rr);
+      wd.mergeCells(rr, 1, rr, 4); wd.mergeCells(rr, 7, rr, 8);
+      r.getCell(1).value = k; r.getCell(5).value = v;
+      r.getCell(6).value = opsi.tanpaPersen || !penyebut ? '' : v / penyebut; r.getCell(6).numFmt = '0.0%';
+      r.getCell(7).value = '█'.repeat(Math.round(v / maks * 18)) || (v ? '▏' : '');
+      r.getCell(7).font = { color: { argb: opsi.warna || BIRU } };
+      r.getCell(5).alignment = { horizontal: 'center' }; r.getCell(6).alignment = { horizontal: 'center' };
+      if (opsi.warnaLabel) r.getCell(1).font = { color: { argb: opsi.warnaLabel } };
+      for (let x = 1; x <= 8; x++) { r.getCell(x).border = { bottom: { style: 'hair', color: { argb: 'FFDADDE1' } } }; if (i % 2) r.getCell(x).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F8FA' } }; }
+      rr++;
+    });
+    rr++;
+  };
+
+  // kepuasan dulu (paling penting bagi pimpinan), lalu pengunjung
+  tabelGrafik('Kepuasan pelayanan (sebaran bintang)', [5, 4, 3, 2, 1].map(n => [`${'★'.repeat(n)}${'☆'.repeat(5 - n)}  ${LABEL_NILAI[n]}`, nl.sebaran[n - 1]]), nl.jumlah, { kolom: 'Penilaian', warna: EMAS, warnaLabel: EMAS });
+  const alasan = urutAngka(nl.catatan);
+  if (alasan.length) tabelGrafik('Alasan yang dipilih penilai', alasan.map(k => [`${CATATAN_KURANG.includes(k) ? '⚠ ' : '✓ '}${k}`, nl.catatan[k]]), nl.jumlah, { kolom: 'Alasan', tanpaPersen: true });
+  if (nl.saran.length) {
+    bagian('Saran terbaru dari warga');
+    nl.saran.slice(0, 10).forEach(s => {
+      const r = wd.getRow(rr);
+      r.getCell(1).value = s.tanggal; r.getCell(2).value = '★'.repeat(s.nilai); r.getCell(2).font = { color: { argb: EMAS } };
+      wd.mergeCells(rr, 3, rr, 8);
+      r.getCell(3).value = s.saran; r.getCell(3).alignment = { wrapText: true, vertical: 'top' };
+      r.getCell(1).font = { size: 9, color: { argb: 'FF65676B' } };
+      r.height = String(s.saran).length > 70 ? 30 : 16;
+      rr++;
+    });
+    rr++;
+  }
+  tabelGrafik('Kunjungan per keperluan', kpUrut.map(k => [labelKeperluan(k), rk.keperluan[k]]), rk.total, { kolom: 'Keperluan' });
+  tabelGrafik('Kunjungan per dusun', urutAngka(rk.dusun).map(k => [judulKata(k), rk.dusun[k]]), rk.total, { kolom: 'Dusun' });
+  tabelGrafik('Kelompok umur pengunjung', Object.keys(rk.umur).map(k => [k + ' tahun', rk.umur[k]]), rk.total, { kolom: 'Umur' });
+  const mingguan = [];
+  for (let m = 0; m * 7 < b.akhir; m++) {
+    const a = m * 7 + 1, z = Math.min(b.akhir, a + 6);
+    mingguan.push([`Minggu ${m + 1} (${a}–${z} ${BULAN[b.bulan - 1].slice(0, 3)})`, rk.perHari.slice(a - 1, z).reduce((s, n) => s + n, 0)]);
+  }
+  tabelGrafik('Tren kunjungan per minggu', mingguan, rk.total, { kolom: 'Minggu' });
+
+  // catatan & tanda tangan
+  c = gabung(rr++, 1, 8);
+  c.value = 'Catatan: indeks kepuasan = rata-rata bintang × 20 (skala 0–100), kategori mutu mengacu rentang nilai SKM PermenPAN-RB 14/2017 sebagai gambaran umum.';
+  c.font = { italic: true, size: 8, color: { argb: 'FF65676B' } }; c.alignment = { wrapText: true }; wd.getRow(rr - 1).height = 24;
+  rr++;
+  [`${namaDesa}, ${tanggalTtd(b)}`, `Kepala Desa ${namaDesa}`, '', '', '', desa.kades || '( ................................ )'].forEach((teks, i) => {
+    const x = gabung(rr++, 5, 8);
+    x.value = teks; x.alignment = { horizontal: 'center' };
+    if (i === 5) x.font = { bold: true, underline: !!desa.kades };
+  });
+
+  /* ----- Sheet 2: Buku Tamu (data kunjungan) ----- */
   const ws = wb.addWorksheet('Buku Tamu', {
     pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
       margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 } },
@@ -1127,11 +1291,6 @@ async function buatExcel(rows, b) {
     views: [{ state: 'frozen', ySplit: 7 }]
   });
   ws.columns = [5, 12, 30, 5, 17, 13, 12, 21, 26, 5, 5, 42].map(w => ({ width: w }));
-  const kop = [
-    [`PEMERINTAH KABUPATEN ${(desa.kabupaten || '').toUpperCase()}`, 12, false],
-    [`KECAMATAN ${(desa.kecamatan || '').toUpperCase()}`, 12, false],
-    [`DESA ${namaDesa.toUpperCase()}`, 15, true]
-  ];
   kop.forEach(([teks, uk, besar], i) => {
     ws.mergeCells(i + 1, 1, i + 1, 12);
     const c = ws.getCell(i + 1, 1);
@@ -1177,39 +1336,37 @@ async function buatExcel(rows, b) {
     if (i === 5) c.font = { bold: true, underline: !!desa.kades };
   });
 
-  /* ----- Sheet 2: Rekap ----- */
-  const wr = wb.addWorksheet('Rekap', { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  wr.columns = [{ width: 34 }, { width: 12 }, { width: 12 }];
-  wr.mergeCells('A1:C1'); wr.getCell('A1').value = `REKAP BUKU TAMU DESA ${namaDesa.toUpperCase()}`;
-  wr.getCell('A1').font = { bold: true, size: 13 }; wr.getCell('A1').alignment = { horizontal: 'center' };
-  wr.mergeCells('A2:C2'); wr.getCell('A2').value = `Bulan ${b.nama}`; wr.getCell('A2').alignment = { horizontal: 'center' };
-  let baris = 4;
-  const tabel = (judul, pasangan, denganPersen = true, penyebut = rk.total) => {
-    const h = wr.getRow(baris);
-    h.values = [judul, 'Jumlah', denganPersen ? 'Persen' : ''];
-    h.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU } }; c.border = garis; });
-    baris++;
-    pasangan.forEach(([k, v], i) => {
-      const r = wr.getRow(baris++);
-      r.values = [k, v, denganPersen && penyebut ? v / penyebut : ''];
-      r.getCell(3).numFmt = '0.0%';
-      r.eachCell({ includeEmpty: true }, c => { c.border = garis; if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU_MUDA } }; });
-      r.getCell(2).alignment = { horizontal: 'center' };
+  /* ----- Sheet 3: PENILAIAN (data mentah rating, tanpa nama) ----- */
+  const wp = wb.addWorksheet('Penilaian', {
+    pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    views: [{ state: 'frozen', ySplit: 4 }]
+  });
+  wp.columns = [6, 12, 9, 9, 22, 30, 50].map(w => ({ width: w }));
+  wp.mergeCells(1, 1, 1, 7); wp.getCell(1, 1).value = `DATA PENILAIAN KEPUASAN PELAYANAN — DESA ${namaDesa.toUpperCase()}`;
+  wp.getCell(1, 1).font = { bold: true, size: 13 }; wp.getCell(1, 1).alignment = { horizontal: 'center' };
+  wp.mergeCells(2, 1, 2, 7); wp.getCell(2, 1).value = `Bulan ${b.nama} · ${nl.jumlah} penilaian · rata-rata ${koma(nl.rata)} dari 5 · tanpa nama penilai`;
+  wp.getCell(2, 1).font = { italic: true, size: 10, color: { argb: 'FF65676B' } }; wp.getCell(2, 1).alignment = { horizontal: 'center' };
+  const kp = wp.getRow(4);
+  kp.values = ['NO', 'TANGGAL', 'JAM', 'BINTANG', 'PENILAIAN', 'ALASAN', 'SARAN'];
+  kp.height = 22;
+  kp.eachCell(x => { x.font = { bold: true, color: { argb: 'FFFFFFFF' } }; x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HIJAU } }; x.alignment = { horizontal: 'center', vertical: 'middle' }; x.border = garis; });
+  const daftarNilai = (nl.daftar || []).slice().sort((x, y) => String(x.waktu).localeCompare(String(y.waktu)));
+  daftarNilai.forEach((d, i) => {
+    const jam = String(d.waktu || '').split(' ')[1] || '';
+    const r = wp.addRow([i + 1, keTanggal(d.tanggal), jam.slice(0, 5), d.nilai, `${'★'.repeat(d.nilai)}${'☆'.repeat(5 - d.nilai)} ${LABEL_NILAI[d.nilai] || ''}`, d.catatan || '', d.saran || '']);
+    r.eachCell({ includeEmpty: true }, (x, col) => {
+      x.border = garis;
+      x.alignment = { vertical: 'top', wrapText: col >= 6, horizontal: col <= 4 ? 'center' : 'left' };
+      if (i % 2 === 1) x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ABU } };
     });
-    baris++;
-  };
-  const urutObj = o => Object.keys(o).filter(k => o[k] > 0).sort((x, y) => o[y] - o[x]).map(k => [labelKeperluan(k), o[k]]);
-  tabel('Ringkasan', [['Total tamu', rk.total], ['Laki-laki', rk.L], ['Perempuan', rk.P], ['Warga Desa ' + namaDesa, rk.warga], ['Dari luar desa', rk.luar]]);
-  tabel('Keperluan', urutObj(rk.keperluan));
-  tabel('Dusun', urutObj(rk.dusun));
-  tabel('Kelompok umur', Object.keys(rk.umur).map(k => [k, rk.umur[k]]));
-  const nl = S.bulan && S.bulan.nilai;
-  if (nl && nl.jumlah) {
-    tabel('Kepuasan pelayanan', [['Jumlah penilaian', nl.jumlah], ['Rata-rata bintang (1–5)', nl.rata], ['Puas & sangat puas (4–5 bintang)', nl.sebaran[3] + nl.sebaran[4]]], false);
-    tabel('Sebaran bintang', [5, 4, 3, 2, 1].map(n => [`${n} bintang – ${LABEL_NILAI[n]}`, nl.sebaran[n - 1]]), true, nl.jumlah);
-  }
-  tabel('Tamu per tanggal', rk.perHari.map((n, i) => [`${i + 1} ${b.nama}`, n]), false);
+    r.getCell(2).numFmt = 'dd-mm-yyyy';
+    r.getCell(5).font = { color: { argb: EMAS } };
+  });
+  if (!daftarNilai.length) { wp.mergeCells(5, 1, 5, 7); wp.getCell(5, 1).value = 'Belum ada penilaian pada bulan ini.'; wp.getCell(5, 1).font = { italic: true }; }
+  else wp.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4 + daftarNilai.length, column: 7 } };
+  wp.pageSetup.printTitlesRow = '4:4';
 
+  wb.views = [{ activeTab: 0, firstSheet: 0 }];
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');

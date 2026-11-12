@@ -744,16 +744,13 @@ async function simpanTamu(d) {
   layarTerima(d, hasil.no, navigator.onLine);
 }
 
+/** Setelah data tersimpan: langsung ke layar penilaian bintang (langkah terakhir), lalu kembali ke beranda */
 function layarTerima(d, no, online) {
   const depan = d.nama && !d.nama.includes('*') ? judulKata(String(d.nama).split(' ')[0]) : '';
-  $('#terima-judul').textContent = depan ? `Terima kasih, ${depan}` : 'Terima kasih';
-  $('#terima-pesan').textContent = online || no ? 'Kunjungan Anda sudah tercatat di buku tamu.' : 'Data tersimpan di tablet dan akan terkirim otomatis saat internet tersambung.';
-  $('#terima-no').textContent = no ? `Nomor urut ${no}` : '';
-  tampil('terima');
-  const bar = $('#terima-bar');
-  bar.classList.remove('jalan'); void bar.offsetWidth; bar.classList.add('jalan');
-  clearTimeout(layarTerima._t);
-  layarTerima._t = setTimeout(() => { if (S.view === 'terima') tampil('nik'); }, LAMA_TERIMA_MS);
+  $('#n-tercatat-judul').textContent = depan ? `Terima kasih, ${depan}. Kunjungan Anda sudah tercatat.` : 'Terima kasih. Kunjungan Anda sudah tercatat.';
+  $('#n-tercatat-sub').textContent = online || no ? '' : 'Data tersimpan di tablet dan akan terkirim otomatis saat internet tersambung.';
+  $('#n-nomor').textContent = no ? `No. ${no}` : '';
+  tampil('nilai');
 }
 
 let _mengirim = false;

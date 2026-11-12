@@ -897,3 +897,20 @@ body.mengetik #n-kirim { position: static; }
   .laporan .kpi span { font-size: .75rem; }
 }
 @media (max-width: 640px) { .langkah-form li { font-size: .78rem; } }
+
+/* ================= ALUR: SIMPAN → PENILAIAN → BERANDA ================= */
+.n-tercatat { display: flex; align-items: center; gap: 12px; text-align: left; background: #E9F7EE; color: #1E6B34; border-radius: 10px; padding: 12px 14px; }
+.n-cek { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--sukses); color: #fff; display: grid; place-items: center; animation: muncul .35s ease-out; }
+.n-cek svg { width: 20px; height: 20px; stroke-width: 3; }
+.n-tercatat-teks { flex: 1; min-width: 0; display: grid; gap: 2px; font-size: .95rem; line-height: 1.35; }
+.n-tercatat-teks span { font-size: .85rem; color: #2F6B45; }
+.n-tercatat-teks span:empty { display: none; }
+.n-nomor { flex: none; background: #fff; color: var(--sukses); border: 1px solid #BFE5CB; border-radius: 8px; padding: 6px 10px; font-size: 1.05rem; white-space: nowrap; }
+.n-nomor:empty { display: none; }
+.n-langkah { margin: 6px 0 -6px; font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--utama); }
+@media (max-width: 380px) { .n-tercatat { padding: 10px; gap: 10px; } .n-tercatat-teks { font-size: .88rem; } }
+/* layar awal tanpa tombol penilaian (penilaian kini langkah ke-3 setelah Simpan) */
+@media (min-width: 961px) {
+  .nik-layout { grid-template-areas: "sapa kartu"; grid-template-rows: auto; align-items: center; }
+  .nik-layout > .sapa { align-self: center; }
+}

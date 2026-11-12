@@ -48,11 +48,12 @@
         <div class="sapa">
           <h1 class="sapa-merek">SIMPEL <span>Merden</span></h1>
           <p class="sapa-kepanjangan">Sistem Informasi Pelayanan</p>
-          <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan Anda dalam dua langkah.</p>
+          <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan dan beri penilaian dalam tiga langkah singkat.</p>
           <p class="sapa-tgl" id="sapa-tgl"></p>
           <ol class="alur" aria-label="Langkah mengisi">
             <li class="on"><b>1</b>Ketik NIK — data Anda muncul otomatis</li>
             <li><b>2</b>Pilih keperluan, lalu Simpan</li>
+            <li><b>3</b>Beri bintang untuk pelayanan kami</li>
           </ol>
         </div>
 
@@ -80,17 +81,18 @@
           <div class="pemisah"><span>atau</span></div>
           <button class="btn btn-hijau btn-lg lebar" data-go="manual">Isi manual (tanpa NIK/dari luar desa)</button>
         </div>
-      <button class="ajak-nilai" data-go="nilai">
-        <span class="bintang-kecil" aria-hidden="true">★★★★★</span>
-        <span><b>Sudah selesai dilayani?</b> Beri nilai pelayanan kami</span>
-        <span aria-hidden="true">›</span>
-      </button>
       </div>
     </section>
 
     <!-- PENILAIAN KEPUASAN -->
     <section id="v-nilai" class="view" hidden>
       <div class="card nilai-card">
+        <div class="n-tercatat" id="n-tercatat" role="status">
+          <span class="n-cek" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span class="n-tercatat-teks"><b id="n-tercatat-judul">Kunjungan Anda sudah tercatat.</b><span id="n-tercatat-sub"></span></span>
+          <b class="n-nomor" id="n-nomor"></b>
+        </div>
+        <p class="n-langkah">Langkah terakhir</p>
         <h1>Bagaimana pelayanan kami hari ini?</h1>
         <p class="muted">Sentuh bintang. Penilaian ini tanpa nama dan hanya memerlukan beberapa detik.</p>
         <div class="bintang" id="n-bintang" role="radiogroup" aria-label="Nilai pelayanan">
@@ -107,7 +109,7 @@
           <textarea id="n-saran" rows="2" maxlength="300" autocapitalize="sentences" placeholder="Saran atau masukan (boleh dikosongkan)"></textarea>
         </div>
         <button class="btn btn-primary btn-xl" id="n-kirim" disabled>Kirim penilaian</button>
-        <button class="btn btn-ghost lebar" data-go="nik">Kembali</button>
+        <button class="btn btn-ghost lebar" id="n-lewati" data-go="nik">Lewati, kembali ke beranda</button>
       </div>
     </section>
 

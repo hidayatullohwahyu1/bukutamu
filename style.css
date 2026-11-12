@@ -858,3 +858,9 @@ body.mengetik #n-kirim { position: static; }
   .ajak-nilai .bintang-kecil { display: none; }
   .nik-card { padding: 12px; }
 }
+
+/* ================= MEREK SIMPEL MERDEN ================= */
+.sapa-merek span { color: var(--teks); font-weight: 700; }
+.sapa-kepanjangan { margin: -6px 0 14px; font-size: .9rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teks-2); }
+@media (max-width: 960px) { .sapa-kepanjangan { margin: -2px 0 8px; font-size: .78rem; } }
+@media (max-height: 700px) and (orientation: portrait) { .sapa-kepanjangan { margin: 2px 0 4px; font-size: .7rem; } }

@@ -1,4 +1,4 @@
-/* Buku Tamu Desa Merden — frontend PWA
+/* SIMPEL Merden (Sistem Informasi Pelayanan Desa Merden) — frontend PWA
  * Alur tamu: 1) NIK  2) pilih keperluan  3) simpan.
  * Data disimpan dulu di tablet (antrean), lalu dikirim ke server — tidak ada data hilang saat sinyal putus. */
 'use strict';
@@ -1116,7 +1116,7 @@ async function buatExcel(rows, b) {
   const garis = { top: tipis, left: tipis, bottom: tipis, right: tipis };
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Buku Tamu Desa ' + namaDesa;
+  wb.creator = 'SIMPEL ' + namaDesa;
   wb.created = new Date();
 
   const kop = [
@@ -1142,7 +1142,7 @@ async function buatExcel(rows, b) {
   const wd = wb.addWorksheet('Ringkasan', {
     pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
       margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 } },
-    headerFooter: { oddFooter: `&L&8Ringkasan Buku Tamu Desa ${namaDesa} - ${b.nama}&R&8Halaman &P dari &N` },
+    headerFooter: { oddFooter: `&L&8SIMPEL ${namaDesa} - Ringkasan Pelayanan ${b.nama}&R&8Halaman &P dari &N` },
     views: [{ showGridLines: false }]
   });
   wd.columns = Array.from({ length: 8 }, () => ({ width: 13 }));
@@ -1157,7 +1157,7 @@ async function buatExcel(rows, b) {
   });
   rr++;
   let c = gabung(rr++, 1, 8);
-  c.value = 'RINGKASAN BUKU TAMU & KEPUASAN PELAYANAN'; c.font = { bold: true, size: 14, color: { argb: BIRU } }; c.alignment = { horizontal: 'center' };
+  c.value = 'RINGKASAN PELAYANAN & KEPUASAN MASYARAKAT'; c.font = { bold: true, size: 14, color: { argb: BIRU } }; c.alignment = { horizontal: 'center' };
   c = gabung(rr++, 1, 8);
   c.value = `Bulan ${b.nama}`; c.font = { size: 11, color: { argb: 'FF65676B' } }; c.alignment = { horizontal: 'center' };
   rr++;
@@ -1287,7 +1287,7 @@ async function buatExcel(rows, b) {
   const ws = wb.addWorksheet('Buku Tamu', {
     pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
       margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 } },
-    headerFooter: { oddFooter: `&L&8Buku Tamu Desa ${namaDesa} - ${b.nama}&R&8Halaman &P dari &N` },
+    headerFooter: { oddFooter: `&L&8SIMPEL ${namaDesa} - Buku Tamu ${b.nama}&R&8Halaman &P dari &N` },
     views: [{ state: 'frozen', ySplit: 7 }]
   });
   ws.columns = [5, 12, 30, 5, 17, 13, 12, 21, 26, 5, 5, 42].map(w => ({ width: w }));
@@ -1371,7 +1371,7 @@ async function buatExcel(rows, b) {
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Buku_Tamu_${namaDesa}_${b.nama.replace(' ', '_')}.xlsx`;
+  a.download = `SIMPEL_${namaDesa}_Laporan_${b.nama.replace(' ', '_')}.xlsx`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   return rk;
@@ -1512,7 +1512,7 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => {
   _promptPasang = null;
   $('#btn-pasang').hidden = true;
-  toast('Aplikasi terpasang. Buka dari ikon Buku Tamu di layar HP.');
+  toast('Aplikasi terpasang. Buka dari ikon SIMPEL Merden di layar HP.');
 });
 async function mulaiPasang() {
   if (_promptPasang) {

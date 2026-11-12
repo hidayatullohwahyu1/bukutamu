@@ -1,7 +1,7 @@
 {
-  "name": "Buku Tamu Desa Merden",
-  "short_name": "Buku Tamu",
-  "description": "Buku tamu digital Kantor Desa Merden",
+  "name": "SIMPEL Merden – Sistem Informasi Pelayanan",
+  "short_name": "SIMPEL Merden",
+  "description": "Buku tamu dan survei kepuasan pelayanan Kantor Desa Merden",
   "lang": "id",
   "start_url": "./",
   "scope": "./",

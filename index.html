@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Buku Tamu Desa Merden</title>
+  <title>SIMPEL Merden – Sistem Informasi Pelayanan Desa Merden</title>
   <meta name="theme-color" content="#FFFFFF">
-  <meta name="description" content="Buku tamu digital Kantor Desa Merden">
+  <meta name="description" content="SIMPEL Merden: buku tamu dan survei kepuasan pelayanan Kantor Desa Merden">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
@@ -17,7 +17,7 @@
     <button class="brand" data-go="nik" aria-label="Kembali ke awal">
       <img src="icons/logo.svg" alt="" class="logo" width="40" height="40">
       <span>
-        <span class="brand-title">Buku Tamu</span>
+        <span class="brand-title">SIMPEL</span>
         <span class="brand-sub" id="brand-sub">Desa Merden</span>
       </span>
     </button>
@@ -42,7 +42,8 @@
     <section id="v-nik" class="view" hidden>
       <div class="nik-layout">
         <div class="sapa">
-          <h1 class="sapa-merek">Buku Tamu</h1>
+          <h1 class="sapa-merek">SIMPEL <span>Merden</span></h1>
+          <p class="sapa-kepanjangan">Sistem Informasi Pelayanan</p>
           <p class="sapa-tagline">Selamat datang di Kantor Desa <span id="sapa-desa">Merden</span>. Catat kunjungan Anda dalam 2 langkah.</p>
           <p class="sapa-tgl" id="sapa-tgl"></p>
           <ol class="alur" aria-label="Langkah mengisi">
@@ -224,7 +225,7 @@
 
     <!-- LAPORAN (admin) -->
     <section id="v-daftar" class="view" hidden>
-      <div class="kepala"><h1>Laporan Buku Tamu</h1></div>
+      <div class="kepala"><h1>Laporan Pelayanan</h1></div>
       <div class="card laporan">
         <label class="bulan-pilih">Pilih bulan
           <input type="month" id="l-bulan">
@@ -326,7 +327,7 @@
 
       <div class="card" id="a-pasang-kartu" hidden>
         <h2>Pasang aplikasi di perangkat ini</h2>
-        <p class="muted">Membuat ikon Buku Tamu di layar HP/tablet, terbuka layar penuh seperti aplikasi biasa.</p>
+        <p class="muted">Membuat ikon SIMPEL Merden di layar HP/tablet, terbuka layar penuh seperti aplikasi biasa.</p>
         <button id="a-pasang" class="btn btn-primary">Pasang aplikasi</button>
       </div>
 
@@ -388,7 +389,7 @@
 
   <!-- panduan pasang aplikasi (bila tombol pasang otomatis tidak tersedia) -->
   <dialog id="dlg-pasang">
-    <h2>Pasang Buku Tamu di HP</h2>
+    <h2>Pasang SIMPEL Merden di HP</h2>
     <p id="pasang-catatan" class="muted"></p>
     <p><b>HP Android (Chrome)</b></p>
     <ol class="pasang-langkah">
@@ -401,7 +402,7 @@
       <li>Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas).</li>
       <li>Pilih <b>Tambahkan ke Layar Utama</b>, lalu <b>Tambah</b>.</li>
     </ol>
-    <p class="muted">Setelah terpasang, buka dari ikon <b>Buku Tamu</b> di layar HP.</p>
+    <p class="muted">Setelah terpasang, buka dari ikon <b>SIMPEL Merden</b> di layar HP.</p>
     <div class="dlg-actions">
       <button id="pasang-tutup" class="btn btn-primary">Mengerti</button>
     </div>

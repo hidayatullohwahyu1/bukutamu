@@ -1,6 +1,6 @@
-/* Service worker Buku Tamu Desa Merden
+/* Service worker SIMPEL Merden
  * Naikkan VERSI setiap kali file aplikasi diubah agar tablet mengambil versi baru. */
-const VERSI = 'bukutamu-v12';
+const VERSI = 'simpel-v13';
 const ASET = [
   './',
   './index.html',
